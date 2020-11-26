@@ -1,0 +1,27 @@
+# Include your project-specific ignores in this file
+# Read about how to use .gitignore: https://help.github.com/articles/ignoring-files
+/build
+/out
+/node_modules
+/coverage
+/dist
+
+babel.babel
+TODO.md
+examples/basic/index.debug.html
+
+# To store secret credentials
+*.secret.js
+
+# OS generated files #
+######################
+**/.DS_Store
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+#IDE files
+.idea

@@ -1,0 +1,106 @@
+{
+    "name": "@ui-js/web-components",
+    "version": "0.1.0",
+    "description": "A collection of UI components for the web",
+    "license": "MIT",
+    "funding": {
+        "type": "patreon",
+        "url": "https://patreon.com/arnog"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ui-js/web-components.git"
+    },
+    "bugs": "https://github.com/ui-js/web-components/issues/",
+    "scripts": {
+        "build": "bash ./scripts/build.sh",
+        "dist": "bash ./scripts/build.sh production",
+        "lint": "eslint --fix src/",
+        "start": "bash ./scripts/build.sh watch",
+        "test": "bash ./scripts/test.sh",
+        "version": "bash ./scripts/version.sh",
+        "postversion": "bash ./scripts/github-release.sh"
+    },
+    "main": "./dist/ui.js",
+    "module": "./dist/ui.js",
+    "types": "./dist/public/ui.d.ts",
+    "files": [
+        "/dist"
+    ],
+    "prettier": {
+        "singleQuote": true,
+        "trailingComma": "es5",
+        "endOfLine": "lf",
+        "tabWidth": 4,
+        "jsxSingleQuote": true
+    },
+    "husky": {
+        "hooks": {
+            "pre-commit": "lint-staged && bash ./scripts/pre-commit.sh",
+            "pre-push": "npm test"
+        }
+    },
+    "lint-staged": {
+        "/src/**/*.ts": [
+            "eslint --fix"
+        ],
+        "/src/**/*.{ts,css,json,less}": [
+            "prettier --write"
+        ],
+        "/*.md": [
+            "prettier --write"
+        ]
+    },
+    "engines": {
+        "npm": ">=6.14.8",
+        "node": ">=12.0.0"
+    },
+    "browserslist": [
+        "> 1%",
+        "last 2 versions",
+        "maintained node versions",
+        "not dead"
+    ],
+    "author": "Arno Gourdol <arno@arno.org>",
+    "contributors": [],
+    "devDependencies": {
+        "@babel/types": "^7.12.7",
+        "@cortex-js/prettier-config": "^1.0.0",
+        "@rollup/plugin-node-resolve": "^10.0.0",
+        "@types/css-font-loading-module": "0.0.4",
+        "@types/jest": "^26.0.15",
+        "@types/node": "^14.14.9",
+        "@typescript-eslint/eslint-plugin": "^4.8.1",
+        "@typescript-eslint/parser": "^4.8.1",
+        "@typescript-eslint/typescript-estree": "^4.8.1",
+        "autoprefixer": "^9.8.6",
+        "check-node-version": "^4.0.3",
+        "cssnano": "^4.1.10",
+        "eslint": "^7.14.0",
+        "eslint-config-prettier": "^6.15.0",
+        "eslint-plugin-no-unsanitized": "^3.1.4",
+        "eslint-plugin-prettier": "^3.1.4",
+        "http-server": "^0.12.3",
+        "husky": "^4.3.0",
+        "jest": "^26.6.3",
+        "jest-electron": "^0.1.11",
+        "jest-silent-reporter": "^0.3.0",
+        "less": "^3.12.2",
+        "lint-staged": "^10.5.1",
+        "postcss-cli": "^7.1.2",
+        "prettier": "^2.2.0",
+        "rollup": "^2.33.3",
+        "rollup-plugin-copy": "^3.3.0",
+        "rollup-plugin-eslint": "^7.0.0",
+        "rollup-plugin-postcss": "^3.1.8",
+        "rollup-plugin-terser": "^7.0.2",
+        "rollup-plugin-typescript2": "^0.29.0",
+        "ts-jest": "^26.4.4",
+        "typescript": "^4.1.2"
+    },
+    "dependencies": {},
+    "keywords": [
+        "web components",
+        "ui"
+    ]
+}
