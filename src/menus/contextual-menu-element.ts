@@ -10,7 +10,7 @@ import { RootMenu } from './root-menu';
  * This web component display a contextual menu when the user performs the
  * appropriate gesture (right-click, control+click, shift+F10, etc...),
  * handles the user interaction to navigate the items in the menu and submenus
- * and either invoke the `onClick()` hook associated with the selected menu item
+ * and either invoke the `onSelect()` hook associated with the selected menu item
  * or dispatches a 'select' event when the user completes their selection.
  *
  * Place this element inside a container and the contextual menu will be
@@ -35,21 +35,34 @@ export class UIContextualMenuElement extends HTMLElement {
         this.shadowRoot.appendChild(MENU_TEMPLATE.content.cloneNode(true));
         // Inline menu items (as a JSON structure in the markup)
         let jsonMenuItems = [];
-        try {
-            const json = this.shadowRoot
-                .querySelector<HTMLSlotElement>('slot')
-                .assignedElements()
-                .filter((x) => x['type'] === 'application/json')
-                .map((x) => x.textContent)
-                .join('');
-            if (json) {
+        const json = this.shadowRoot
+            .querySelector<HTMLSlotElement>('slot')
+            .assignedElements()
+            .filter((x) => x['type'] === 'application/json')
+            .map((x) => x.textContent)
+            .join('');
+        if (json) {
+            try {
                 jsonMenuItems = JSON.parse(json);
                 if (!Array.isArray(jsonMenuItems)) {
                     jsonMenuItems = [];
                 }
+            } catch (e) {
+                const msg = e.toString();
+                const m = msg.match(/position ([0-9]+)/);
+                if (m) {
+                    const index = parseInt(m[1]);
+                    console.error(
+                        msg +
+                            '\n' +
+                            json
+                                .substring(Math.max(index - 40, 0), index)
+                                .trim()
+                    );
+                } else {
+                    console.error(msg);
+                }
             }
-        } catch (e) {
-            console.log(e.toString());
         }
         this.rootMenu = new RootMenu(
             [...(inMenuItems ?? []), ...jsonMenuItems],

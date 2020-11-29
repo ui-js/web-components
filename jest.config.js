@@ -7,7 +7,7 @@ module.exports = {
     // testEnvironment: '@jest-runner/electron/environment',
     coverageReporters: ['lcov'],
     coverageDirectory: './coverage',
-    roots: ['<rootDir>/test', '<rootDir>/src'],
+    roots: ['<rootDir>/src'],
     // reporters: ['jest-silent-reporter'],
     globals: {
         'ts-jest': {

@@ -249,6 +249,12 @@ export class RootMenu extends Menu {
         scrim.addEventListener('keydown', this);
         scrim.addEventListener('keyup', this);
         scrim.addEventListener('mousemove', this);
+
+        // Prevent scrolling in the background
+        const scrollbarWidth =
+            window.innerWidth - document.documentElement.clientWidth;
+        document.body.style.overflow = 'hidden';
+        document.body.style.marginRight = `${scrollbarWidth}px`;
     }
 
     private disconnectScrim(): void {
@@ -263,6 +269,10 @@ export class RootMenu extends Menu {
         scrim.removeEventListener('mousemove', this);
 
         scrim.parentNode.removeChild(scrim);
+
+        // Restore background scrolling
+        document.body.style.marginRight = '';
+        document.body.style.overflow = 'visible';
     }
 
     get rootMenu(): RootMenu {

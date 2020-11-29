@@ -22,12 +22,13 @@ MENU_TEMPLATE.innerHTML = `<style>
     outline: -webkit-focus-ring-color auto 1px;
 }
 :host div.scrim {
-    position: absolute;
+    position: fixed;
+    contain: content;
     top: 0;
     left: 0;
-    width: 100vw;
-    height: 100vh;
-    /* z-index: 9999; */
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
     outline: none;
     background: transparent;
 }
@@ -44,8 +45,15 @@ ul.menu-container {
     margin: 0;
     cursor: initial;
     user-select: none;
+
     color: var(--label-color);
+    font-weight: normal;
+    font-style: normal;
+    text-shadow: none;
+    text-transform: none;
+    letter-spacing: 0;
     outline: none;
+    opacity: 1;
 }
 ul > li {
     display: flex;
@@ -60,6 +68,16 @@ ul > li {
     position: relative;
     outline: none;
     fill: currentColor;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    text-align: left;
+    color: inherit;
+
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    font-size: 13px;
+    line-height: 16px;
+    letter-spacing: 0.007em;
 }
 ul > li > .label {
     appearance: none;
@@ -68,18 +86,9 @@ ul > li > .label {
     width: 100%;
     margin: 0;
     padding: 1px 2px 1px 1px;
-    text-align: left;
-    color: inherit;
     overflow: visible;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
     border: 1px solid transparent;
     white-space: nowrap;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    font-size: 13px;
-    line-height: 16px;
-    letter-spacing: 0.007em;
 }
 ul > li[role=separator] {
     border-bottom: 1px solid #c7c7c7;
@@ -113,7 +122,7 @@ ul > li[aria-haspopup=true]>.label {
     margin-left: 24px;
     width: 10px;
     height: 10px;
-    padding-bottom: 9px;
+    padding-bottom: 4px;
 }
 
 ul > li[aria-haspopup=true].active::after {
@@ -139,7 +148,7 @@ export type KeyboardModifiers = {
 };
 
 export type MenuItemTemplate = {
-    onClick?: (menuItem: MenuItem, kbd?: KeyboardModifiers) => void;
+    onSelect?: (menuItem: MenuItem, kbd?: KeyboardModifiers) => void;
     type?: 'normal' | 'separator' | 'submenu' | 'checkbox' | 'radio';
     className?: string;
     label?:
@@ -699,7 +708,7 @@ export class MenuItem {
     enabled: boolean;
     visible: boolean;
     checked?: boolean;
-    onClick?: (menuItem: MenuItem, kbd?: KeyboardModifiers) => void;
+    onSelect?: (menuItem: MenuItem, kbd?: KeyboardModifiers) => void;
     // sublabel?: string;
     // tooltip?: string;
     // accelerator?: string;
@@ -759,7 +768,6 @@ export class MenuItem {
 
     handleEvent(event: Event): void {
         if (event.type === 'mouseenter') {
-            console.log('entering ', this.label);
             const ev = event as MouseEvent;
             this.parentMenu.rootMenu.cancelDelayedOperation();
             // If there is a submenu open, and the mouse is moving in the
@@ -892,8 +900,8 @@ export class MenuItem {
                     setTimeout(() => {
                         this.parentMenu.rootMenu.hide();
                         setTimeout(() => {
-                            if (this.onClick) {
-                                this.onClick(this, kbd);
+                            if (typeof this.onSelect === 'function') {
+                                this.onSelect(this, kbd);
                             } else {
                                 this.host.dispatchEvent(
                                     new CustomEvent<MenuSelectEvent>('select', {
