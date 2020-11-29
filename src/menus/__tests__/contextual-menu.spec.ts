@@ -1,5 +1,5 @@
 // import './contextual-menu-element';
-import { UIContextualMenuElement } from './contextual-menu-element';
+import { UIContextualMenuElement } from '../contextual-menu-element';
 
 describe('contextual-menu', () => {
     it('renders a simple contextual menu with markup', async () => {
