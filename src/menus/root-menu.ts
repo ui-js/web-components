@@ -51,9 +51,10 @@ export class RootMenu extends Menu {
             root?: Node;
             host?: Element;
             keyboardModifiers?: KeyboardModifiers;
+            assignedElement?: HTMLElement;
         }
     ) {
-        super(menuItems);
+        super(menuItems, { assignedContainer: options?.assignedElement });
         this.isDynamic = menuItems.some(isDynamic);
         this.currentKeyboardModifiers = options?.keyboardModifiers;
         this.typingBuffer = '';
@@ -285,21 +286,22 @@ export class RootMenu extends Menu {
         clientY?: number;
         parent?: Node; // Where the menu should attach
         keyboardModifiers?: KeyboardModifiers;
-    }): void {
-        // Record the opening time.
-        // If we receive a mouseup within a small delta of the open time stamp
-        // hold the menu open until it is dismissed, otherwise close it.
-        this._openTimestamp = Date.now();
-        this.state = 'open';
-
-        this.updateMenu(options?.keyboardModifiers);
-
+    }): boolean {
         // Remember the previously focused element. We'll restore it when we close.
-        this.previousActiveElement = (document.activeElement as any) as HTMLOrSVGElement;
+        const activeElement = deepActiveElement();
+        if (super.show({ ...options, parent: this.scrim })) {
+            // Record the opening time.
+            // If we receive a mouseup within a small delta of the open time stamp
+            // hold the menu open until it is dismissed, otherwise close it.
+            this._openTimestamp = Date.now();
+            this.state = 'open';
 
-        this.connectScrim(options?.parent ?? document.body);
+            this.previousActiveElement = activeElement;
 
-        super.show({ ...options, parent: this.scrim });
+            this.connectScrim(options?.parent ?? document.body);
+            return true;
+        }
+        return false;
     }
 
     hide(): void {
@@ -342,8 +344,8 @@ export class RootMenu extends Menu {
 
 function isDynamic(item: MenuItemTemplate): boolean {
     const result =
-        typeof item.enabled === 'function' ||
-        typeof item.visible === 'function' ||
+        typeof item.disabled === 'function' ||
+        typeof item.hidden === 'function' ||
         typeof item.checked === 'function' ||
         typeof item.label === 'function' ||
         typeof item.ariaDetails === 'function' ||
@@ -353,4 +355,12 @@ function isDynamic(item: MenuItemTemplate): boolean {
         return result || item.submenu.some(isDynamic);
     }
     return result;
+}
+
+function deepActiveElement(): HTMLOrSVGElement | null {
+    let a = document.activeElement;
+    while (a?.shadowRoot?.activeElement) {
+        a = a.shadowRoot.activeElement;
+    }
+    return (a as unknown) as HTMLOrSVGElement;
 }

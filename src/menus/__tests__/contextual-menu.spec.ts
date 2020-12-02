@@ -1,5 +1,4 @@
-// import './contextual-menu-element';
-import { UIContextualMenuElement } from '../contextual-menu-element';
+import { UIContextMenuElement } from '../context-menu-element';
 
 describe('contextual-menu', () => {
     it('renders a simple contextual menu with markup', async () => {
@@ -9,7 +8,7 @@ describe('contextual-menu', () => {
 
         const container = window.document.createElement('div');
         window.document.body.appendChild(container);
-        container.innerHTML = `<ui-contextual-menu><script type='application/json'>
+        container.innerHTML = `<ui-context-menu><script type='application/json'>
         [
             { "label": "Cut"},
             { "label": "Copy"},
@@ -20,7 +19,7 @@ describe('contextual-menu', () => {
             },
             {
                 "label": "Paste as Graphic",
-                "enabled": false
+                "disabled": true
             },
             { "type": "separator" },
             {
@@ -38,18 +37,18 @@ describe('contextual-menu', () => {
             { "label": "Insert Column After" }
         ]
     </script>
-</ui-contextual-menu>`;
+</ui-context-menu>`;
 
         const el = window.document.body.getElementsByTagName(
-            'ui-contextual-menu'
-        )[0] as UIContextualMenuElement;
+            'ui-context-menu'
+        )[0] as UIContextMenuElement;
 
         // The following expect() is important.
-        // Without it, the './contextual-menu-element' module get stripped
-        // (and therefore the <ui-contextual-menu> tag fails)
-        // as the "as UIContextualMenuElement" statement is not sufficient to
+        // Without it, the './context-menu-element' module get stripped
+        // (and therefore the <ui-context-menu> tag fails)
+        // as the "as UIContextMenuElement" statement is not sufficient to
         // keep a reference to the module.
-        expect(el instanceof UIContextualMenuElement).toBeTruthy();
+        expect(el instanceof UIContextMenuElement).toBeTruthy();
 
         el.show();
         expect(el.shadowRoot.innerHTML).toMatchSnapshot();

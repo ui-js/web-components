@@ -1,9 +1,12 @@
+import { UIMenuItemElement } from './menu-item-element';
 import { RootMenu } from './root-menu';
 
 export const MENU_TEMPLATE = document.createElement('template');
-MENU_TEMPLATE.innerHTML = `<style>
+MENU_TEMPLATE.innerHTML = `<ul></ul><slot></slot>`;
+export const MENU_STYLE = document.createElement('template');
+MENU_STYLE.innerHTML = `<style>
 :host {
-    display: block;
+    display: none;
     color-scheme: light dark;
     --active-label-color: #fff;
     --label-color: #121212;
@@ -31,6 +34,9 @@ MENU_TEMPLATE.innerHTML = `<style>
     z-index: 9999;
     outline: none;
     background: transparent;
+}
+:host slot {
+    display: none;
 }
 ul.menu-container {
     position: absolute;
@@ -90,6 +96,9 @@ ul > li > .label {
     border: 1px solid transparent;
     white-space: nowrap;
 }
+ul > li > .label.indent {
+    margin-left: 12px;
+}
 ul > li[role=separator] {
     border-bottom: 1px solid #c7c7c7;
     border-radius: 0;
@@ -124,6 +133,13 @@ ul > li[aria-haspopup=true]>.label {
     height: 10px;
     padding-bottom: 4px;
 }
+.checkmark {
+    margin-right: -11px;
+    margin-left: -4px;
+    margin-top : 2px;
+    width: 16px;
+    height: 16px;
+}
 
 ul > li[aria-haspopup=true].active::after {
     color: white;
@@ -137,8 +153,7 @@ ul > li[aria-haspopup=true].active::after {
         --active-bg-dimmed: #5c5c5;
     }
 }
-</style>
-<div></div><slot style="display:none"></slot>`;
+</style>`;
 
 export type KeyboardModifiers = {
     alt: boolean;
@@ -148,7 +163,7 @@ export type KeyboardModifiers = {
 };
 
 export type MenuItemTemplate = {
-    onSelect?: (menuItem: MenuItem, kbd?: KeyboardModifiers) => void;
+    onSelect?: (ev: CustomEvent<MenuSelectEvent>) => void;
     type?: 'normal' | 'separator' | 'submenu' | 'checkbox' | 'radio';
     className?: string;
     label?:
@@ -169,20 +184,15 @@ export type MenuItemTemplate = {
               item: MenuItemTemplate,
               keyboardModifiers?: KeyboardModifiers
           ) => string);
-    // sublabel?: string;
-    // tooltip?: string;
-    // accelerator?: string;
-    // icon?: string;
     submenu: MenuItemTemplate[];
-    id?: string;
 
-    visible?:
+    hidden?:
         | boolean
         | ((
               item: MenuItemTemplate,
               keyboardModifiers?: KeyboardModifiers
           ) => boolean);
-    enabled?:
+    disabled?:
         | boolean
         | ((
               item: MenuItemTemplate,
@@ -194,10 +204,16 @@ export type MenuItemTemplate = {
               item: MenuItemTemplate,
               keyboardModifiers?: KeyboardModifiers
           ) => boolean);
+
+    /** Caller defined id string. Passed to the `onSelect()` hook. */
+    id?: string;
+
+    /** Caller defined data block. Passed to the `onSelect()` hook.*/
+    data?: any;
 };
 
 /**
- * An instance of `Menu` is a set of menu items, including submenus.
+ * An instance of `Menu` is a collection of menu items, including submenus.
  */
 export class Menu {
     parentMenu: Menu;
@@ -205,7 +221,10 @@ export class Menu {
     protected _element: HTMLElement;
     protected _menuItems: MenuItem[];
     private _activeMenuItem: MenuItem;
-    isSubmenuOpen: boolean; // If tru, _activeMenuItem.submenu is open
+    isSubmenuOpen: boolean; // If true, _activeMenuItem.submenu_ is open
+
+    hasCheckbox: boolean; // If true, has at least one checkbox menu item
+    hasRadio: boolean; // If true, has at least one radio menu item
 
     /*
      * The menu items template are preserved so that the actual menu items
@@ -214,13 +233,21 @@ export class Menu {
      */
     private _menuItemsTemplate: MenuItemTemplate[] | undefined;
 
+    /**
+     * Optional, an HTML element to be used as the container for this menu.
+     * Used when this maps to a custom element with a <ul> in its template.
+     */
+    private _assignedContainer: HTMLElement;
+
     constructor(
         menuItems?: MenuItemTemplate[],
         options?: {
             parentMenu?: Menu;
+            assignedContainer?: HTMLElement;
         }
     ) {
         this.parentMenu = options?.parentMenu ?? null;
+        this._assignedContainer = options?.assignedContainer;
 
         this._menuItemsTemplate = menuItems;
         this.isSubmenuOpen = false;
@@ -235,9 +262,10 @@ export class Menu {
     }
 
     updateMenu(keyboardModifiers?: KeyboardModifiers): void {
-        // The state of the keyboard modifiers has changed and the menu
+        // The state of the keyboard modifiers may have changed and the menu
         // is dynamic: recalculate the menu
-        // Save the current menu item
+
+        // Save the current menu
         const elem = this._element;
         let saveCurrentItem: number;
         let clientX: string;
@@ -255,53 +283,73 @@ export class Menu {
         }
 
         this._menuItems = [];
+        this.hasCheckbox = false;
+        this.hasRadio = false;
         if (!this._menuItemsTemplate) return;
         this._menuItemsTemplate.forEach((x) =>
             this.appendMenuItem(x, keyboardModifiers)
         );
 
+        // Add menu-item-elements
+        if (this.host?.shadowRoot) {
+            const itemElements = this.host.shadowRoot
+                .querySelector<HTMLSlotElement>('slot')
+                .assignedElements()
+                .filter<UIMenuItemElement>(
+                    (x): x is UIMenuItemElement => x.tagName === 'UI-MENU-ITEM'
+                );
+            Array.from(itemElements).forEach((x) =>
+                this.appendMenuItem(x, keyboardModifiers)
+            );
+        }
+
+        this.hasCheckbox = this._menuItems.some((x) => x.type === 'checkbox');
+        this.hasRadio = this._menuItems.some((x) => x.type === 'radio');
+
         if (elem) {
-            // If there was an element, restore it and its state
+            // If there was a previous version of the menu,
+            // restore it and its state
             parent?.appendChild(this.element);
 
             this.element.style.position = 'absolute';
             this.element.style.top = clientY;
             this.element.style.left = clientX;
 
-            this.activeMenuItem = this.at(saveCurrentItem);
+            this.activeMenuItem = this.menuItems[saveCurrentItem];
             if (this.activeMenuItem?.submenu) {
                 this.activeMenuItem.openSubmenu(keyboardModifiers);
             }
         }
     }
 
-    at(index: number): MenuItem {
-        return this._menuItems[index];
+    get menuItems(): MenuItem[] {
+        return this._menuItems;
     }
 
     /** First activable menu item */
     get firstMenuItem(): MenuItem {
         let result = 0;
         let found = false;
-        while (!found && result <= this._menuItems.length - 1) {
-            const item = this.at(result);
-            found = item.type !== 'separator' && item.visible && item.enabled;
+        const menuItems = this.menuItems;
+        while (!found && result <= menuItems.length - 1) {
+            const item = menuItems[result];
+            found = item.type !== 'separator' && !item.hidden && !item.disabled;
             result += 1;
         }
 
-        return !found ? null : this.at(result - 1);
+        return !found ? null : menuItems[result - 1];
     }
     /** Last activable menu item */
     get lastMenuItem(): MenuItem {
-        let result = this._menuItems.length - 1;
+        let result = this.menuItems.length - 1;
         let found = false;
         while (!found && result >= 0) {
-            const item = this.at(result);
-            found = item.type !== 'separator' && item.visible && item.enabled;
+            const item = this.menuItems[result];
+            found = item.type !== 'separator' && !item.hidden && !item.disabled;
             result -= 1;
         }
 
-        return !found ? null : this.at(result + 1);
+        return !found ? null : this.menuItems[result + 1];
     }
     /**
      * The active menu is displayed on a colored background.
@@ -322,12 +370,12 @@ export class Menu {
             // Remove previously active element
             if (this.activeMenuItem) {
                 const item = this.activeMenuItem;
-                item.element.classList.remove('active');
+                item.active = false;
                 // If there is a submenu, hide it
                 item.submenu?.hide();
             }
 
-            if (!value?.visible) {
+            if (value?.hidden) {
                 this._activeMenuItem = undefined;
                 return;
             }
@@ -335,9 +383,13 @@ export class Menu {
             this._activeMenuItem = value;
 
             // Make new element active
-            value?.element.classList.add('active');
+            if (value) value.active = true;
         }
-        value?.element.focus();
+        if (value) {
+            value.element.focus();
+        } else {
+            this._element?.focus();
+        }
 
         // Update secondary state of parent
         this.parentMenu?.activeMenuItem?.element.classList.toggle(
@@ -354,12 +406,12 @@ export class Menu {
         let found = false;
         let result = this._menuItems.indexOf(this._activeMenuItem) + dir;
         while (!found && result >= first && result <= last) {
-            const item = this.at(result);
-            found = item.type !== 'separator' && item.visible && item.enabled;
+            const item = this._menuItems[result];
+            found = item.type !== 'separator' && !item.hidden && !item.disabled;
             result += dir;
         }
         return found
-            ? this.at(result - dir)
+            ? this._menuItems[result - dir]
             : dir > 0
             ? this.lastMenuItem
             : this.firstMenuItem;
@@ -377,7 +429,7 @@ export class Menu {
     }
     findMenuItem(text: string): MenuItem {
         const candidates = this._menuItems.filter(
-            (x) => x.type !== 'separator' && x.visible && x.enabled
+            (x) => x.type !== 'separator' && !x.hidden && !x.disabled
         );
         if (candidates.length === 0) return null;
         const last =
@@ -404,12 +456,17 @@ export class Menu {
     get element(): HTMLElement {
         if (this._element) return this._element;
 
-        const ul = document.createElement('ul');
-        ul.className = 'menu-container';
+        const ul = this._assignedContainer ?? document.createElement('ul');
+        ul.classList.add('menu-container');
+        ul.setAttribute('part', 'menu-container');
         ul.setAttribute('tabindex', '-1');
         ul.setAttribute('role', 'menu');
         ul.setAttribute('aria-orientation', 'vertical');
 
+        // Remove all items
+        ul.textContent = '';
+
+        // Add back all necessary items (after they've been updated if applicable)
         this._menuItems.forEach((x) => {
             const elem = x.element;
             if (elem) ul.appendChild(elem);
@@ -422,14 +479,17 @@ export class Menu {
 
     /**
      * @param parent: where the menu should be attached
+     * @return false if no menu to show
      */
     show(options?: {
         parent: Node;
         clientX?: number;
         clientY?: number;
         keyboardModifiers?: KeyboardModifiers;
-    }): void {
+    }): boolean {
         this.updateMenu(options?.keyboardModifiers);
+        if (this.menuItems.filter((x) => !x.hidden).length === 0) return false;
+
         options?.parent?.appendChild(this.element);
 
         if (isFinite(options?.clientY) && isFinite(options?.clientY)) {
@@ -446,6 +506,8 @@ export class Menu {
         if (this.parentMenu) {
             this.parentMenu.openSubmenu = this;
         }
+
+        return true;
     }
 
     hide(): void {
@@ -480,20 +542,8 @@ export class Menu {
         this.isSubmenuOpen = expanded;
     }
 
-    getMenuItemById(id: string): MenuItem | null {
-        let result = null;
-        this._menuItems.forEach((x) => {
-            if (x.id === id) {
-                result = x;
-            } else if (x.submenu) {
-                result = x.submenu.getMenuItemById(id);
-            }
-        });
-        return result;
-    }
-
     appendMenuItem(
-        menuItem: MenuItemTemplate,
+        menuItem: MenuItemTemplate | UIMenuItemElement,
         keyboardModifiers: KeyboardModifiers
     ): void {
         this.insertMenuItem(-1, menuItem, keyboardModifiers);
@@ -501,14 +551,19 @@ export class Menu {
 
     insertMenuItem(
         pos: number,
-        menuItem: MenuItemTemplate,
+        menuItem: MenuItemTemplate | UIMenuItemElement,
         keyboardModifiers: KeyboardModifiers
     ): void {
         if (pos < 0) pos = Math.max(0, this._menuItems.length - 1);
 
-        const item = new MenuItem(menuItem, this, {
-            keyboardModifiers: keyboardModifiers,
-        });
+        let item: MenuItem;
+        if (menuItem instanceof UIMenuItemElement) {
+            item = new MenuItemFromElement(menuItem, this);
+        } else {
+            item = new MenuItemFromTemplate(menuItem, this, {
+                keyboardModifiers: keyboardModifiers,
+            });
+        }
 
         this._menuItems.splice(pos + 1, 0, item);
     }
@@ -684,9 +739,16 @@ export function mightProducePrintableCharacter(evt: KeyboardEvent): boolean {
 const CHEVRON_RIGHT_TEMPLATE = document.createElement('template');
 CHEVRON_RIGHT_TEMPLATE.innerHTML = `<span aria-hidden="true" class="right-chevron"><svg focusable="false" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path fill="currentColor" d="M285.476 272.971L91.132 467.314c-9.373 9.373-24.569 9.373-33.941 0l-22.667-22.667c-9.357-9.357-9.375-24.522-.04-33.901L188.505 256 34.484 101.255c-9.335-9.379-9.317-24.544.04-33.901l22.667-22.667c9.373-9.373 24.569-9.373 33.941 0L285.475 239.03c9.373 9.372 9.373 24.568.001 33.941z"></path></svg></span>`;
 
+const CHECKMARK_TEMPLATE = document.createElement('template');
+CHECKMARK_TEMPLATE.innerHTML = `<span aria-hidden="true" class="checkmark"><svg  xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M435.848 83.466L172.804 346.51l-96.652-96.652c-4.686-4.686-12.284-4.686-16.971 0l-28.284 28.284c-4.686 4.686-4.686 12.284 0 16.971l133.421 133.421c4.686 4.686 12.284 4.686 16.971 0l299.813-299.813c4.686-4.686 4.686-12.284 0-16.971l-28.284-28.284c-4.686-4.686-12.284-4.686-16.97 0z"></path></svg>
+</span>`;
+
 export type MenuSelectEvent = {
-    menuItem: MenuItem;
-    keyboardModifiers: KeyboardModifiers;
+    keyboardModifiers?: KeyboardModifiers;
+    id?: string;
+    label?: string;
+    data?: any;
+    element?: HTMLElement;
 };
 
 declare global {
@@ -699,71 +761,18 @@ declare global {
     }
 }
 
-export class MenuItem {
-    type: 'normal' | 'separator' | 'submenu' | 'checkbox' | 'radio';
-    className?: string;
-    label?: string;
-    ariaLabel?: string;
-    ariaDetails?: string;
-    enabled: boolean;
-    visible: boolean;
-    checked?: boolean;
-    onSelect?: (menuItem: MenuItem, kbd?: KeyboardModifiers) => void;
-    // sublabel?: string;
-    // tooltip?: string;
-    // accelerator?: string;
-    // icon?: string;
-    submenu?: Menu;
-    id?: string;
-
-    _element: HTMLElement;
+/**
+ * Base class to represent a menu item.
+ * There are two subclasses:
+ * - MenuItemFromTemplate for menu items created from a JSON template
+ * - MenuItemFromElement for menu items created for a UIMenuItemElement
+ */
+export abstract class MenuItem {
     parentMenu: Menu;
+    submenu?: Menu;
 
-    constructor(
-        template: MenuItemTemplate,
-        parentMenu: Menu,
-        options?: {
-            keyboardModifiers?: KeyboardModifiers;
-        }
-    ) {
-        this.enabled =
-            evalToBoolean(
-                template,
-                template.enabled,
-                options?.keyboardModifiers
-            ) ?? true;
-        this.visible =
-            evalToBoolean(
-                template,
-                template.visible,
-                options?.keyboardModifiers
-            ) ?? true;
-        this.checked =
-            evalToBoolean(
-                template,
-                template.checked,
-                options?.keyboardModifiers
-            ) ?? false;
+    constructor(parentMenu: Menu) {
         this.parentMenu = parentMenu;
-
-        this.id = template.id;
-        this.className = template.className;
-        this.label = evalToString(template, template.label, options);
-        this.ariaLabel = evalToString(template, template.ariaLabel, options);
-        this.ariaDetails = evalToString(
-            template,
-            template.ariaDetails,
-            options
-        );
-
-        if (Array.isArray(template.submenu)) {
-            this.type = 'submenu';
-            this.submenu = new Menu(template.submenu, {
-                parentMenu,
-            });
-        } else {
-            this.type = template.type ?? 'normal';
-        }
     }
 
     handleEvent(event: Event): void {
@@ -808,73 +817,23 @@ export class MenuItem {
         }
     }
 
-    private render(): HTMLElement | null {
-        if (!this.visible) return null;
+    abstract get type():
+        | 'normal'
+        | 'separator'
+        | 'submenu'
+        | 'checkbox'
+        | 'radio';
 
-        if (this.type === 'separator') {
-            const li = document.createElement('li');
-            li.setAttribute('role', 'separator');
-            return li;
-        }
+    abstract get active(): boolean;
+    abstract get hidden(): boolean;
+    abstract get disabled(): boolean;
+    abstract get label(): string;
+    abstract set active(val: boolean);
 
-        if (
-            this.type !== 'normal' &&
-            this.type !== 'submenu' &&
-            this.type !== 'radio' &&
-            this.type !== 'checkbox'
-        ) {
-            return null;
-        }
-        const li = document.createElement('li');
-        if (this.className) {
-            li.className = this.className;
-        }
-        li.setAttribute('tabindex', '-1');
-        if (this.type === 'radio') {
-            li.setAttribute('role', 'menuitemradio');
-        } else if (this.type === 'checkbox') {
-            li.setAttribute('role', 'menuitemcheckbox');
-        } else {
-            li.setAttribute('role', 'menuitem');
-        }
-        if (this.checked) {
-            li.setAttribute('aria-checked', 'true');
-        }
-        if (this.type === 'submenu') {
-            li.setAttribute('aria-haspopup', 'true');
-            li.setAttribute('aria-expanded', 'false');
-        }
-        if (this.ariaLabel) li.setAttribute('aria-label', this.ariaLabel);
-        if (this.ariaDetails) li.setAttribute('aria-label', this.ariaDetails);
+    // Notify the owner that a menu item has been selected
+    abstract dispatchSelect(kbd?: KeyboardModifiers): void;
 
-        if (!this.enabled) {
-            li.setAttribute('aria-disabled', 'true');
-        } else {
-            li.addEventListener('mouseenter', this);
-            li.addEventListener('mouseleave', this);
-            li.addEventListener('mouseup', this);
-        }
-
-        const span = document.createElement('span');
-        span.innerHTML = this.label;
-        span.className = 'label';
-        if (this.enabled) {
-            span.addEventListener('click', (ev: MouseEvent) =>
-                this.select(keyboardModifiersFromEvent(ev))
-            );
-        }
-        li.appendChild(span);
-        if (this.submenu) {
-            li.appendChild(CHEVRON_RIGHT_TEMPLATE.content.cloneNode(true));
-        }
-        return li;
-    }
-
-    get element(): HTMLElement {
-        if (this._element) return this._element;
-        this._element = this.render();
-        return this._element;
-    }
+    abstract get element(): HTMLElement;
 
     get host(): Element {
         return this.parentMenu.host;
@@ -887,38 +846,23 @@ export class MenuItem {
      */
     select(kbd?: KeyboardModifiers): void {
         this.parentMenu.rootMenu.cancelDelayedOperation();
-        if (
-            this.type === 'normal' ||
-            this.type === 'radio' ||
-            this.type === 'checkbox'
-        ) {
-            // Make the item blink, then execute the command
+
+        if (this.submenu) {
+            this.openSubmenu(kbd);
+            return;
+        }
+
+        // Make the item blink, then execute the command
+        setTimeout(() => {
+            this.active = false;
             setTimeout(() => {
-                this.element.classList.remove('active');
+                this.active = true;
                 setTimeout(() => {
-                    this.element.classList.add('active');
-                    setTimeout(() => {
-                        this.parentMenu.rootMenu.hide();
-                        setTimeout(() => {
-                            if (typeof this.onSelect === 'function') {
-                                this.onSelect(this, kbd);
-                            } else {
-                                this.host.dispatchEvent(
-                                    new CustomEvent<MenuSelectEvent>('select', {
-                                        detail: {
-                                            menuItem: this,
-                                            keyboardModifiers: kbd,
-                                        },
-                                    })
-                                );
-                            }
-                        }, 120);
-                    }, 120);
+                    this.parentMenu.rootMenu.hide();
+                    setTimeout(() => this.dispatchSelect(kbd), 120);
                 }, 120);
             }, 120);
-        } else if (this.type === 'submenu') {
-            this.openSubmenu(kbd);
-        }
+        }, 120);
     }
 
     /**
@@ -966,9 +910,17 @@ export class MenuItem {
     movingTowardSubmenu(ev: MouseEvent): boolean {
         const lastEv = this.parentMenu.rootMenu.lastMouseEvent;
         if (!lastEv) return false;
+
         const deltaT = ev.timeStamp - lastEv.timeStamp;
         if (deltaT > 500) return false;
 
+        const deltaX = ev.clientX - lastEv.clientX;
+
+        // Moving too slow?
+        const s = speed(deltaX, lastEv.clientY - ev.clientY, deltaT);
+        if (s <= 0.2) return false;
+
+        // Moving horizontally towards the submenu?
         let position: 'left' | 'right' = 'right';
         if (this.submenu.element) {
             const submenuBounds = this.submenu.element.getBoundingClientRect();
@@ -979,13 +931,354 @@ export class MenuItem {
             }
         }
 
-        const deltaX = ev.clientX - lastEv.clientX;
-        const s = speed(deltaX, lastEv.clientY - ev.clientY, deltaT);
-        if (position === 'right') {
-            return deltaX > 0 && s > 0.2;
+        return position === 'right' ? deltaX > 0 : deltaX < 0;
+    }
+}
+
+export class MenuItemFromTemplate extends MenuItem {
+    _type: 'normal' | 'separator' | 'submenu' | 'checkbox' | 'radio';
+    _label?: string;
+    _disabled: boolean;
+    _hidden: boolean;
+
+    className?: string;
+    ariaLabel?: string;
+    ariaDetails?: string;
+    checked?: boolean;
+    onSelect?: (ev: CustomEvent<MenuSelectEvent>) => void;
+    submenu?: Menu;
+    id?: string;
+    data?: any;
+
+    _element: HTMLElement;
+
+    constructor(
+        template: MenuItemTemplate,
+        parentMenu: Menu,
+        options?: {
+            keyboardModifiers?: KeyboardModifiers;
+        }
+    ) {
+        super(parentMenu);
+        this.parentMenu = parentMenu;
+
+        this._hidden =
+            evalToBoolean(
+                template,
+                template.hidden,
+                options?.keyboardModifiers
+            ) ?? false;
+        this._disabled =
+            evalToBoolean(
+                template,
+                template.disabled,
+                options?.keyboardModifiers
+            ) ?? false;
+        this.checked =
+            evalToBoolean(
+                template,
+                template.checked,
+                options?.keyboardModifiers
+            ) ?? false;
+
+        this.id = template.id;
+        this.className = template.className;
+        this._label = evalToString(template, template.label, options);
+        this.ariaLabel = evalToString(template, template.ariaLabel, options);
+        this.ariaDetails = evalToString(
+            template,
+            template.ariaDetails,
+            options
+        );
+        if (typeof template.onSelect) {
+            this.onSelect = template.onSelect;
+        }
+        this.data = template.data;
+
+        if (Array.isArray(template.submenu)) {
+            this._type = 'submenu';
+            this.submenu = new Menu(template.submenu, {
+                parentMenu,
+            });
+        } else {
+            if (
+                typeof template.type === 'undefined' &&
+                typeof template.checked !== 'undefined'
+            ) {
+                this._type = 'checkbox';
+            } else {
+                this._type = template.type ?? 'normal';
+            }
+        }
+    }
+
+    get type() {
+        return this._type;
+    }
+    get label(): string {
+        return this._label ?? this.ariaLabel;
+    }
+    get hidden(): boolean {
+        return this._hidden;
+    }
+    get disabled(): boolean {
+        return this._disabled;
+    }
+
+    private render(): HTMLElement | null {
+        if (this.hidden) return null;
+
+        if (this.type === 'separator') {
+            const li = document.createElement('li');
+            li.setAttribute('part', 'menu-separator');
+            li.setAttribute('role', 'separator');
+            return li;
         }
 
-        return false;
+        if (
+            this.type !== 'normal' &&
+            this.type !== 'submenu' &&
+            this.type !== 'radio' &&
+            this.type !== 'checkbox'
+        ) {
+            return null;
+        }
+        const li = document.createElement('li');
+        li.setAttribute('part', 'menu-item');
+        if (this.className) {
+            li.className = this.className;
+        }
+        li.setAttribute('tabindex', '-1');
+        if (this.type === 'radio') {
+            li.setAttribute('role', 'menuitemradio');
+        } else if (this.type === 'checkbox') {
+            li.setAttribute('role', 'menuitemcheckbox');
+        } else {
+            li.setAttribute('role', 'menuitem');
+        }
+        if (this.checked) {
+            li.setAttribute('aria-checked', 'true');
+            li.appendChild(CHECKMARK_TEMPLATE.content.cloneNode(true));
+        }
+        if (this.type === 'submenu') {
+            li.setAttribute('aria-haspopup', 'true');
+            li.setAttribute('aria-expanded', 'false');
+        }
+        if (this.ariaLabel) li.setAttribute('aria-label', this.ariaLabel);
+        if (this.ariaDetails) li.setAttribute('aria-label', this.ariaDetails);
+
+        if (this.disabled) {
+            li.setAttribute('aria-disabled', 'true');
+        } else {
+            li.removeAttribute('aria-disabled');
+            li.addEventListener('mouseenter', this);
+            li.addEventListener('mouseleave', this);
+            li.addEventListener('mouseup', this);
+        }
+
+        const span = document.createElement('span');
+        span.innerHTML = this.label;
+        span.className =
+            this.parentMenu.hasCheckbox || this.parentMenu.hasRadio
+                ? 'label indent'
+                : 'label';
+        if (!this.disabled) {
+            span.addEventListener('click', (ev: MouseEvent) =>
+                this.select(keyboardModifiersFromEvent(ev))
+            );
+        }
+        li.appendChild(span);
+        if (this.submenu) {
+            li.appendChild(CHEVRON_RIGHT_TEMPLATE.content.cloneNode(true));
+        }
+        return li;
+    }
+
+    get active(): boolean {
+        return this.element.classList.contains('active');
+    }
+
+    set active(val: boolean) {
+        if (val) {
+            this.element.classList.add('active');
+        } else {
+            this.element.classList.remove('active');
+        }
+    }
+
+    get element(): HTMLElement {
+        if (this._element) return this._element;
+        this._element = this.render();
+        return this._element;
+    }
+
+    dispatchSelect(kbd?: KeyboardModifiers): void {
+        const ev = new CustomEvent<MenuSelectEvent>('select', {
+            detail: {
+                keyboardModifiers: kbd,
+                id: this.id,
+                label: this.label,
+                data: this.data,
+            },
+        });
+        if (typeof this.onSelect === 'function') {
+            this.onSelect(ev);
+        } else {
+            this.host.dispatchEvent(ev);
+        }
+    }
+}
+
+export class MenuItemFromElement extends MenuItem {
+    // The <ui-menu-item> in the <slot> serves as the 'template' for this
+    // menu item
+    _sourceElement: HTMLElement;
+    // The source element is cloned and inserted in a <li>
+    _sourceElementClone: HTMLElement;
+    // The <li> is cached
+    _cachedElement: HTMLElement;
+
+    constructor(element: HTMLElement, parentMenu: Menu) {
+        super(parentMenu);
+        this.parentMenu = parentMenu;
+        this._sourceElement = element;
+    }
+
+    get type(): 'normal' | 'separator' | 'submenu' | 'checkbox' | 'radio' {
+        if (this.separator) return 'separator';
+        // @todo: submenu, radio, checkbox
+        return 'normal';
+    }
+    get label(): string {
+        return this._sourceElement.innerHTML;
+    }
+    get hidden(): boolean {
+        return this._sourceElement.hasAttribute('hidden');
+    }
+    set hidden(value: boolean) {
+        if (value) {
+            this._sourceElement.setAttribute('hidden', '');
+        } else {
+            this._sourceElement.removeAttribute('hidden');
+        }
+    }
+    get disabled(): boolean {
+        return this._sourceElement.hasAttribute('disabled');
+    }
+    set disabled(value: boolean) {
+        if (value) {
+            this._sourceElement.setAttribute('disabled', '');
+        } else {
+            this._sourceElement.removeAttribute('disabled');
+        }
+    }
+    get checked(): boolean {
+        return this._sourceElement.hasAttribute('checked');
+    }
+    set checked(value: boolean) {
+        if (value) {
+            this._sourceElement.setAttribute('checked', '');
+        } else {
+            this._sourceElement.removeAttribute('checked');
+        }
+    }
+    get separator(): boolean {
+        return this._sourceElement.hasAttribute('separator');
+    }
+    set separator(value: boolean) {
+        if (value) {
+            this._sourceElement.setAttribute('separator', '');
+        } else {
+            this._sourceElement.removeAttribute('separator');
+        }
+    }
+    get active(): boolean {
+        return this._cachedElement?.classList.contains('active') ?? false;
+    }
+
+    set active(val: boolean) {
+        // For the active attribute, set the value on the sourced element
+        // (the <ui-menu-item>)
+        if (val) {
+            this._cachedElement?.classList.add('active');
+            this._sourceElementClone.setAttribute('active', '');
+        } else {
+            this._cachedElement?.classList.remove('active');
+            this._sourceElementClone.removeAttribute('active');
+        }
+    }
+
+    private render(): HTMLElement | null {
+        if (this.hidden) return null;
+
+        if (this.separator) {
+            const li = document.createElement('li');
+            li.setAttribute('part', 'menu-separator');
+            li.setAttribute('role', 'separator');
+            return li;
+        }
+
+        const li = document.createElement('li');
+        li.setAttribute('part', 'menu-item');
+        li.setAttribute('tabindex', '-1');
+        if (this.type === 'radio') {
+            li.setAttribute('role', 'menuitemradio');
+        } else if (this.type === 'checkbox') {
+            li.setAttribute('role', 'menuitemcheckbox');
+        } else {
+            li.setAttribute('role', 'menuitem');
+        }
+        if (this.checked) {
+            li.setAttribute('aria-checked', 'true');
+            li.appendChild(CHECKMARK_TEMPLATE.content.cloneNode(true));
+        }
+        if (this.type === 'submenu') {
+            li.setAttribute('aria-haspopup', 'true');
+            li.setAttribute('aria-expanded', 'false');
+        }
+
+        if (this.disabled) {
+            li.setAttribute('aria-disabled', 'true');
+        } else {
+            li.removeAttribute('aria-disabled');
+            li.addEventListener('mouseenter', this);
+            li.addEventListener('mouseleave', this);
+            li.addEventListener('mouseup', this);
+        }
+
+        if (!this.disabled) {
+            li.addEventListener('click', (ev: MouseEvent) =>
+                this.select(keyboardModifiersFromEvent(ev))
+            );
+        }
+        this._sourceElementClone = this._sourceElement.cloneNode(
+            true
+        ) as HTMLElement;
+        li.appendChild(this._sourceElementClone);
+
+        return li;
+    }
+
+    get element(): HTMLElement {
+        if (this._cachedElement) return this._cachedElement;
+        this._cachedElement = this.render();
+        return this._cachedElement;
+    }
+
+    dispatchSelect(kbd?: KeyboardModifiers): void {
+        const ev = new CustomEvent<MenuSelectEvent>('select', {
+            detail: {
+                keyboardModifiers: kbd,
+                id: this._sourceElement.getAttribute('id'),
+                label: this.label,
+                element: this._sourceElement,
+            },
+        });
+        if (typeof this._sourceElement.onselect === 'function') {
+            this._sourceElement.onselect(ev);
+        } else {
+            this.host.dispatchEvent(ev);
+        }
     }
 }
 

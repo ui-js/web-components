@@ -4,8 +4,6 @@ title: Welcome to ui-js
 read_time: false
 ---
 
-# UI-JS
-
 The **ui-js** web components are native custom elements. They can be used
 with vanilla Javascript or a framework of your choice such as React or Vue.
 
@@ -35,7 +33,7 @@ All the components follow these principles:
 
 ## Commands, Menus and Navigation
 
--   [Contextual Menu](./guides/menus)
+-   [Context Menu](./guides/menus)
 -   NavBar
 
 ## Lists

@@ -90,6 +90,9 @@ ul > li > .label {
     border: 1px solid transparent;
     white-space: nowrap;
 }
+ul > li > .label.indent {
+    margin-left: 12px;
+}
 ul > li[role=separator] {
     border-bottom: 1px solid #c7c7c7;
     border-radius: 0;
@@ -124,6 +127,13 @@ ul > li[aria-haspopup=true]>.label {
     height: 10px;
     padding-bottom: 4px;
 }
+.checkmark {
+    margin-left: 0;
+    margin-right: -9px;
+    width: 10px;
+    height: 10px;
+    padding-bottom: 4px;
+}
 
 ul > li[aria-haspopup=true].active::after {
     color: white;
@@ -138,7 +148,7 @@ ul > li[aria-haspopup=true].active::after {
     }
 }
 </style>
-<div></div><slot style=\\"display:none\\"></slot><div role=\\"presentation\\" class=\\"scrim\\"><ul class=\\"menu-container\\" tabindex=\\"-1\\" role=\\"menu\\" aria-orientation=\\"vertical\\"><li tabindex=\\"0\\" role=\\"menuitem\\"><span class=\\"label\\">Cut</span></li><li tabindex=\\"-1\\" role=\\"menuitem\\"><span class=\\"label\\">Copy</span></li><li tabindex=\\"-1\\" role=\\"menuitem\\"><span class=\\"label\\">Paste</span></li><li tabindex=\\"-1\\" role=\\"menuitem\\" aria-disabled=\\"true\\"><span class=\\"label\\">Paste as Graphic</span></li><li role=\\"separator\\"></li><li tabindex=\\"-1\\" role=\\"menuitem\\" aria-haspopup=\\"true\\" aria-expanded=\\"false\\"><span class=\\"label\\">Fence</span><span aria-hidden=\\"true\\" class=\\"right-chevron\\"><svg focusable=\\"false\\" role=\\"img\\" xmlns=\\"http://www.w3.org/2000/svg\\" viewBox=\\"0 0 320 512\\"><path fill=\\"currentColor\\" d=\\"M285.476 272.971L91.132 467.314c-9.373 9.373-24.569 9.373-33.941 0l-22.667-22.667c-9.357-9.357-9.375-24.522-.04-33.901L188.505 256 34.484 101.255c-9.335-9.379-9.317-24.544.04-33.901l22.667-22.667c9.373-9.373 24.569-9.373 33.941 0L285.475 239.03c9.373 9.372 9.373 24.568.001 33.941z\\"></path></svg></span></li><li role=\\"separator\\"></li><li tabindex=\\"-1\\" role=\\"menuitem\\"><span class=\\"label\\">Insert Row Before</span></li><li tabindex=\\"-1\\" role=\\"menuitem\\"><span class=\\"label\\">Insert Row After</span></li><li tabindex=\\"-1\\" role=\\"menuitem\\"><span class=\\"label\\">Insert Column Before</span></li><li tabindex=\\"-1\\" role=\\"menuitem\\"><span class=\\"label\\">Insert Column After</span></li></ul></div>"
+<ul><slot></slot></ul><div role=\\"presentation\\" class=\\"scrim\\"><ul class=\\"menu-container\\" tabindex=\\"-1\\" role=\\"menu\\" aria-orientation=\\"vertical\\"></ul></div>"
 `;
 
 exports[`contextual-menu renders a simple contextual menu with markup 2`] = `
@@ -231,6 +241,9 @@ ul > li > .label {
     border: 1px solid transparent;
     white-space: nowrap;
 }
+ul > li > .label.indent {
+    margin-left: 12px;
+}
 ul > li[role=separator] {
     border-bottom: 1px solid #c7c7c7;
     border-radius: 0;
@@ -265,6 +278,13 @@ ul > li[aria-haspopup=true]>.label {
     height: 10px;
     padding-bottom: 4px;
 }
+.checkmark {
+    margin-left: 0;
+    margin-right: -9px;
+    width: 10px;
+    height: 10px;
+    padding-bottom: 4px;
+}
 
 ul > li[aria-haspopup=true].active::after {
     color: white;
@@ -279,5 +299,5 @@ ul > li[aria-haspopup=true].active::after {
     }
 }
 </style>
-<div></div><slot style=\\"display:none\\"></slot>"
+<ul><slot></slot></ul>"
 `;

@@ -1,8 +1,10 @@
+import { UIElement } from '../common/ui-element';
 import {
     KeyboardModifiers,
     keyboardModifiersFromEvent,
     MenuItemTemplate,
     MENU_TEMPLATE,
+    MENU_STYLE,
 } from './menu-core';
 import { RootMenu } from './root-menu';
 
@@ -27,48 +29,26 @@ import { RootMenu } from './root-menu';
  *   outside of the viewport boundary)
  *
  */
-export class UIContextualMenuElement extends HTMLElement {
+export class UIContextMenuElement extends UIElement {
     private rootMenu: RootMenu;
     constructor(inMenuItems?: MenuItemTemplate[]) {
-        super();
-        this.attachShadow({ mode: 'open' });
-        this.shadowRoot.appendChild(MENU_TEMPLATE.content.cloneNode(true));
-        // Inline menu items (as a JSON structure in the markup)
-        let jsonMenuItems = [];
-        const json = this.shadowRoot
-            .querySelector<HTMLSlotElement>('slot')
-            .assignedElements()
-            .filter((x) => x['type'] === 'application/json')
-            .map((x) => x.textContent)
-            .join('');
-        if (json) {
-            try {
-                jsonMenuItems = JSON.parse(json);
-                if (!Array.isArray(jsonMenuItems)) {
-                    jsonMenuItems = [];
-                }
-            } catch (e) {
-                const msg = e.toString();
-                const m = msg.match(/position ([0-9]+)/);
-                if (m) {
-                    const index = parseInt(m[1]);
-                    console.error(
-                        msg +
-                            '\n' +
-                            json
-                                .substring(Math.max(index - 40, 0), index)
-                                .trim()
-                    );
-                } else {
-                    console.error(msg);
-                }
-            }
-        }
+        super({
+            template: MENU_TEMPLATE,
+            style: MENU_STYLE,
+        });
+
+        // Inline menu items (as a JSON structure in a <script> tag
+        // in the markup)
+        let jsonMenuItems = this.json;
+        if (!Array.isArray(jsonMenuItems)) jsonMenuItems = [];
+
         this.rootMenu = new RootMenu(
             [...(inMenuItems ?? []), ...jsonMenuItems],
             {
                 host: this.shadowRoot.host,
-                root: this.shadowRoot,
+                assignedElement: this.shadowRoot.querySelector<HTMLElement>(
+                    'ul'
+                ),
             }
         );
     }
@@ -158,9 +138,13 @@ export class UIContextualMenuElement extends HTMLElement {
         clientY?: number;
         keyboardModifiers?: KeyboardModifiers;
     }): void {
-        if (!this.hasAttribute('tabindex')) this.setAttribute('tabindex', '-1');
-        this.rootMenu.show({ ...options, parent: this.shadowRoot });
-        this.focus();
+        if (this.rootMenu.show({ ...options, parent: this.shadowRoot })) {
+            if (!this.hasAttribute('tabindex')) {
+                this.setAttribute('tabindex', '-1');
+            }
+            this.style.display = 'block';
+            this.focus();
+        }
     }
     /**
      * Hide the menu.
@@ -175,17 +159,15 @@ export class UIContextualMenuElement extends HTMLElement {
     }
 }
 
-export default UIContextualMenuElement;
+export default UIContextMenuElement;
 
 declare global {
     /** @internal */
     interface Window {
-        UIContextualMenuElement: typeof UIContextualMenuElement;
+        UIContextMenuElement: typeof UIContextMenuElement;
     }
 }
-console.log('in source');
-if (!window.customElements.get('ui-contextual-menu')) {
-    console.log('registering');
-    window.UIContextualMenuElement = UIContextualMenuElement;
-    window.customElements.define('ui-contextual-menu', UIContextualMenuElement);
+if (!window.customElements.get('ui-context-menu')) {
+    window.UIContextMenuElement = UIContextMenuElement;
+    window.customElements.define('ui-context-menu', UIContextMenuElement);
 }
