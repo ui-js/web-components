@@ -274,36 +274,43 @@ and embedded stylesheets.
 
 The supported parts are:
 
-| Part             | Description |
-| :--------------- | :---------- |
-| `menu-container` |             |
-| `menu-item`      |             |
-| `menu-separator` |             |
+| Part             | Description                                                                                                 |
+| :--------------- | :---------------------------------------------------------------------------------------------------------- |
+| `menu-container` | The element containing the menu items. Customize this part to control the layout and appearance of the menu |
+| `menu-item`      | An individual menu item. Customize this part to control the layout and appareance of individual menu items  |
+| `menu-separator` | A menu-item with a `separator` attribute                                                                    |
+| `active`         | The currently active (highlighted) menu item                                                                |
+| `checked`        | A menu item that is in a checked state                                                                      |
+| `disabled`       | A menu item in a disabled state                                                                             |
 
 ```html playground
 <style>
-    .zebra-zone ui-context-menu::part(menu-container) {
+    ui-context-menu::part(menu-container) {
         display: flex;
         flex-wrap: wrap;
         justify-content: space-evenly;
         max-width: 228px;
     }
-    .zebra-zone ui-context-menu::part(menu-item) {
+    ui-context-menu::part(menu-item) {
         width: 53px;
         height: 53px;
         margin: 0;
         padding: 4px;
+        box-sizing: border-box;
+        border: 3px solid transparent;
     }
-    .zebra-zone ui-context-menu::part(menu-separator) {
-        width: 100%;
+    ui-context-menu::part(active) {
+        border: 3px solid white;
+        border-radius: 8px;
+        background: transparent;
     }
 </style>
 <div tabindex="0" class="zebra-zone">
     <ui-context-menu>
         <style>
             ui-menu-item {
-                width: 48px;
-                height: 48px;
+                width: 100%;
+                height: 100%;
                 border-radius: 8px;
             }
         </style>

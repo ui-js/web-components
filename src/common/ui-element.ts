@@ -93,3 +93,22 @@ export class UIElement extends HTMLElement {
         return this._style;
     }
 }
+
+export function addPart(el: HTMLElement, part: string): void {
+    if (!el) return;
+    const current = el.getAttribute('part') ?? '';
+    if (!current.includes(part)) {
+        el.setAttribute('part', `${current} ${part}`);
+    }
+}
+
+export function removePart(el: HTMLElement, part: string): void {
+    if (!el) return;
+    const current = el.getAttribute('part') ?? '';
+    if (current.includes(part)) {
+        el.setAttribute(
+            'part',
+            current.replace(new RegExp('\\bs*' + part + 's*\\b', 'g'), '')
+        );
+    }
+}

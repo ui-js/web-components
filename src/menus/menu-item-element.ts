@@ -1,5 +1,7 @@
-const MENU_ITEM_TEMPLATE = document.createElement('template');
-MENU_ITEM_TEMPLATE.innerHTML = `<style>
+import { UIElement } from '../common/ui-element';
+
+const MENU_ITEM_STYLE = document.createElement('template');
+MENU_ITEM_STYLE.innerHTML = `<style>
 :host {
     display: inline;
     color-scheme: light dark;
@@ -82,11 +84,11 @@ MENU_ITEM_TEMPLATE.innerHTML = `<style>
         --active-bg: #5898ff;
         --active-bg-dimmed: #5c5c5;
     }
-}
-</style>
-<slot></slot>`;
+}</style>`;
+const MENU_ITEM_TEMPLATE = document.createElement('template');
+MENU_ITEM_TEMPLATE.innerHTML = '<slot></slot>';
 
-export class UIMenuItemElement extends HTMLElement {
+export class UIMenuItemElement extends UIElement {
     static get observedAttributes(): string[] {
         return ['disabled', 'checked', 'active', 'type'];
     }
@@ -115,6 +117,18 @@ export class UIMenuItemElement extends HTMLElement {
         }
     }
 
+    get separator(): boolean {
+        return this.hasAttribute('separator');
+    }
+
+    set separator(val: boolean) {
+        if (val) {
+            this.setAttribute('separator', '');
+        } else {
+            this.removeAttribute('separator');
+        }
+    }
+
     get active(): boolean {
         return this.hasAttribute('active');
     }
@@ -138,10 +152,7 @@ export class UIMenuItemElement extends HTMLElement {
         }
     }
     constructor() {
-        super();
-
-        this.attachShadow({ mode: 'open' });
-        this.shadowRoot.appendChild(MENU_ITEM_TEMPLATE.content.cloneNode(true));
+        super({ template: MENU_ITEM_TEMPLATE, style: MENU_ITEM_STYLE });
     }
 }
 

@@ -1,9 +1,9 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`contextual-menu renders a simple contextual menu with markup 1`] = `
-"<style>
+"<slot></slot><style>
 :host {
-    display: block;
+    display: none;
     color-scheme: light dark;
     --active-label-color: #fff;
     --label-color: #121212;
@@ -32,6 +32,9 @@ exports[`contextual-menu renders a simple contextual menu with markup 1`] = `
     outline: none;
     background: transparent;
 }
+:host slot {
+    display: none;
+}
 ul.menu-container {
     position: absolute;
     width: auto;
@@ -43,8 +46,8 @@ ul.menu-container {
     list-style: none;
     padding: 6px 0 6px 0;
     margin: 0;
-    cursor: initial;
     user-select: none;
+    cursor: default;
 
     color: var(--label-color);
     font-weight: normal;
@@ -68,9 +71,8 @@ ul > li {
     position: relative;
     outline: none;
     fill: currentColor;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
+    user-select: none;
+    cursor: default;
     text-align: left;
     color: inherit;
 
@@ -101,6 +103,7 @@ ul > li[role=separator] {
     margin-right: 15px;
     padding-top: 5px;
     margin-bottom: 5px;
+    width: 100%;
 }
 ul > li[aria-disabled=true] {
     opacity: .5;
@@ -128,11 +131,11 @@ ul > li[aria-haspopup=true]>.label {
     padding-bottom: 4px;
 }
 .checkmark {
-    margin-left: 0;
-    margin-right: -9px;
-    width: 10px;
-    height: 10px;
-    padding-bottom: 4px;
+    margin-right: -11px;
+    margin-left: -4px;
+    margin-top : 2px;
+    width: 16px;
+    height: 16px;
 }
 
 ul > li[aria-haspopup=true].active::after {
@@ -147,14 +150,13 @@ ul > li[aria-haspopup=true].active::after {
         --active-bg-dimmed: #5c5c5;
     }
 }
-</style>
-<ul><slot></slot></ul><div role=\\"presentation\\" class=\\"scrim\\"><ul class=\\"menu-container\\" tabindex=\\"-1\\" role=\\"menu\\" aria-orientation=\\"vertical\\"></ul></div>"
+</style><div role=\\"presentation\\" class=\\"scrim\\"><ul class=\\"menu-container\\" part=\\"menu-container\\" tabindex=\\"-1\\" role=\\"menu\\" aria-orientation=\\"vertical\\"><li part=\\"menu-item\\" tabindex=\\"0\\" role=\\"menuitem\\"><span class=\\"label\\">Cut</span></li><li part=\\"menu-item\\" tabindex=\\"-1\\" role=\\"menuitem\\"><span class=\\"label\\">Copy</span></li><li part=\\"menu-item\\" tabindex=\\"-1\\" role=\\"menuitem\\"><span class=\\"label\\">Paste</span></li><li part=\\"menu-item\\" tabindex=\\"-1\\" role=\\"menuitem\\"><span class=\\"label\\">Not Visible</span></li><li part=\\"menu-item\\" tabindex=\\"-1\\" role=\\"menuitem\\" aria-disabled=\\"true\\"><span class=\\"label\\">Paste as Graphic</span></li><li part=\\"menu-separator\\" role=\\"separator\\"></li><li part=\\"menu-item\\" tabindex=\\"-1\\" role=\\"menuitem\\" aria-haspopup=\\"true\\" aria-expanded=\\"false\\"><span class=\\"label\\">Fence</span><span aria-hidden=\\"true\\" class=\\"right-chevron\\"><svg focusable=\\"false\\" role=\\"img\\" xmlns=\\"http://www.w3.org/2000/svg\\" viewBox=\\"0 0 320 512\\"><path fill=\\"currentColor\\" d=\\"M285.476 272.971L91.132 467.314c-9.373 9.373-24.569 9.373-33.941 0l-22.667-22.667c-9.357-9.357-9.375-24.522-.04-33.901L188.505 256 34.484 101.255c-9.335-9.379-9.317-24.544.04-33.901l22.667-22.667c9.373-9.373 24.569-9.373 33.941 0L285.475 239.03c9.373 9.372 9.373 24.568.001 33.941z\\"></path></svg></span></li><li part=\\"menu-separator\\" role=\\"separator\\"></li><li part=\\"menu-item\\" tabindex=\\"-1\\" role=\\"menuitem\\"><span class=\\"label\\">Insert Row Before</span></li><li part=\\"menu-item\\" tabindex=\\"-1\\" role=\\"menuitem\\"><span class=\\"label\\">Insert Row After</span></li><li part=\\"menu-item\\" tabindex=\\"-1\\" role=\\"menuitem\\"><span class=\\"label\\">Insert Column Before</span></li><li part=\\"menu-item\\" tabindex=\\"-1\\" role=\\"menuitem\\"><span class=\\"label\\">Insert Column After</span></li></ul></div>"
 `;
 
 exports[`contextual-menu renders a simple contextual menu with markup 2`] = `
-"<style>
+"<slot></slot><style>
 :host {
-    display: block;
+    display: none;
     color-scheme: light dark;
     --active-label-color: #fff;
     --label-color: #121212;
@@ -183,6 +185,9 @@ exports[`contextual-menu renders a simple contextual menu with markup 2`] = `
     outline: none;
     background: transparent;
 }
+:host slot {
+    display: none;
+}
 ul.menu-container {
     position: absolute;
     width: auto;
@@ -194,8 +199,8 @@ ul.menu-container {
     list-style: none;
     padding: 6px 0 6px 0;
     margin: 0;
-    cursor: initial;
     user-select: none;
+    cursor: default;
 
     color: var(--label-color);
     font-weight: normal;
@@ -219,9 +224,8 @@ ul > li {
     position: relative;
     outline: none;
     fill: currentColor;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
+    user-select: none;
+    cursor: default;
     text-align: left;
     color: inherit;
 
@@ -252,6 +256,7 @@ ul > li[role=separator] {
     margin-right: 15px;
     padding-top: 5px;
     margin-bottom: 5px;
+    width: 100%;
 }
 ul > li[aria-disabled=true] {
     opacity: .5;
@@ -279,11 +284,11 @@ ul > li[aria-haspopup=true]>.label {
     padding-bottom: 4px;
 }
 .checkmark {
-    margin-left: 0;
-    margin-right: -9px;
-    width: 10px;
-    height: 10px;
-    padding-bottom: 4px;
+    margin-right: -11px;
+    margin-left: -4px;
+    margin-top : 2px;
+    width: 16px;
+    height: 16px;
 }
 
 ul > li[aria-haspopup=true].active::after {
@@ -298,6 +303,5 @@ ul > li[aria-haspopup=true].active::after {
         --active-bg-dimmed: #5c5c5;
     }
 }
-</style>
-<ul><slot></slot></ul>"
+</style>"
 `;

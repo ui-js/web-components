@@ -1,3 +1,4 @@
+import { addPart, removePart, UIElement } from '../common/ui-element';
 import { UIMenuItemElement } from './menu-item-element';
 import { RootMenu } from './root-menu';
 
@@ -49,8 +50,8 @@ ul.menu-container {
     list-style: none;
     padding: 6px 0 6px 0;
     margin: 0;
-    cursor: initial;
     user-select: none;
+    cursor: default;
 
     color: var(--label-color);
     font-weight: normal;
@@ -74,9 +75,8 @@ ul > li {
     position: relative;
     outline: none;
     fill: currentColor;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
+    user-select: none;
+    cursor: default;
     text-align: left;
     color: inherit;
 
@@ -107,6 +107,7 @@ ul > li[role=separator] {
     margin-right: 15px;
     padding-top: 5px;
     margin-bottom: 5px;
+    width: 100%;
 }
 ul > li[aria-disabled=true] {
     opacity: .5;
@@ -1132,13 +1133,13 @@ export class MenuItemFromTemplate extends MenuItem {
 export class MenuItemFromElement extends MenuItem {
     // The <ui-menu-item> in the <slot> serves as the 'template' for this
     // menu item
-    _sourceElement: HTMLElement;
+    _sourceElement: UIElement;
     // The source element is cloned and inserted in a <li>
-    _sourceElementClone: HTMLElement;
+    _sourceElementClone: UIElement;
     // The <li> is cached
     _cachedElement: HTMLElement;
 
-    constructor(element: HTMLElement, parentMenu: Menu) {
+    constructor(element: UIElement, parentMenu: Menu) {
         super(parentMenu);
         this.parentMenu = parentMenu;
         this._sourceElement = element;
@@ -1157,9 +1158,9 @@ export class MenuItemFromElement extends MenuItem {
     }
     set hidden(value: boolean) {
         if (value) {
-            this._sourceElement.setAttribute('hidden', '');
+            this._sourceElementClone?.setAttribute('hidden', '');
         } else {
-            this._sourceElement.removeAttribute('hidden');
+            this._sourceElementClone.removeAttribute('hidden');
         }
     }
     get disabled(): boolean {
@@ -1167,9 +1168,11 @@ export class MenuItemFromElement extends MenuItem {
     }
     set disabled(value: boolean) {
         if (value) {
-            this._sourceElement.setAttribute('disabled', '');
+            this._sourceElementClone?.setAttribute('disabled', '');
+            addPart(this._cachedElement, 'disabled');
         } else {
-            this._sourceElement.removeAttribute('disabled');
+            this._sourceElementClone?.removeAttribute('disabled');
+            removePart(this._cachedElement, 'disabled');
         }
     }
     get checked(): boolean {
@@ -1177,9 +1180,11 @@ export class MenuItemFromElement extends MenuItem {
     }
     set checked(value: boolean) {
         if (value) {
-            this._sourceElement.setAttribute('checked', '');
+            this._sourceElementClone?.setAttribute('checked', '');
+            addPart(this._cachedElement, 'checked');
         } else {
-            this._sourceElement.removeAttribute('checked');
+            this._sourceElementClone?.removeAttribute('checked');
+            removePart(this._cachedElement, 'checked');
         }
     }
     get separator(): boolean {
@@ -1187,9 +1192,9 @@ export class MenuItemFromElement extends MenuItem {
     }
     set separator(value: boolean) {
         if (value) {
-            this._sourceElement.setAttribute('separator', '');
+            this._sourceElementClone?.setAttribute('separator', '');
         } else {
-            this._sourceElement.removeAttribute('separator');
+            this._sourceElementClone?.removeAttribute('separator');
         }
     }
     get active(): boolean {
@@ -1201,10 +1206,12 @@ export class MenuItemFromElement extends MenuItem {
         // (the <ui-menu-item>)
         if (val) {
             this._cachedElement?.classList.add('active');
-            this._sourceElementClone.setAttribute('active', '');
+            addPart(this._cachedElement, 'active');
+            this._sourceElementClone?.setAttribute('active', '');
         } else {
             this._cachedElement?.classList.remove('active');
-            this._sourceElementClone.removeAttribute('active');
+            removePart(this._cachedElement, 'active');
+            this._sourceElementClone?.removeAttribute('active');
         }
     }
 
@@ -1253,7 +1260,7 @@ export class MenuItemFromElement extends MenuItem {
         }
         this._sourceElementClone = this._sourceElement.cloneNode(
             true
-        ) as HTMLElement;
+        ) as UIElement;
         li.appendChild(this._sourceElementClone);
 
         return li;
