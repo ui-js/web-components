@@ -67,8 +67,9 @@ function timestamp() {
 }
 
 function isTTY() {
-    return process.stdout.isTTY && 
-        typeof process.stdout.clearLine === 'function';
+    return (
+        process.stdout.isTTY && typeof process.stdout.clearLine === 'function'
+    );
 }
 
 function writeTTY(s) {
@@ -102,12 +103,14 @@ function buildProgress() {
                 process.env.BUILD === 'watch' ||
                 process.env.BUILD === 'watching'
             ) {
-                writeTTY(timestamp() +
-                    (process.env.BUILD === 'watching' ? 
-                        ' Build updated' : ' Build done')
+                writeTTY(
+                    timestamp() +
+                        (process.env.BUILD === 'watching'
+                            ? ' Build updated'
+                            : ' Build done')
                 );
             } else {
-                writeTTY()
+                writeTTY();
             }
             if (process.env.BUILD === 'watch') {
                 process.env.BUILD = 'watching';
@@ -115,7 +118,7 @@ function buildProgress() {
                 console.log(chalk.green(' ✔') + '  Build complete ');
                 console.log(' 🚀 Launching server');
                 exec(
-                    "npx http-server . -s -c-1 --cors='*' -o /examples/test-cases/index.html",
+                    "npx http-server . -s -c-1 --cors='*' -o /examples//index.html",
                     (error, stdout, stderr) => {
                         if (error) {
                             console.error(`http-server error: ${error}`);
@@ -153,7 +156,7 @@ const ROLLUP = [
             resolve(),
             typescript(TYPESCRIPT_OPTIONS),
         ],
-        output: 
+        output:
             // UMD file, suitable for import, <script> and require()
             {
                 format: 'umd',
@@ -162,7 +165,7 @@ const ROLLUP = [
                 sourcemap: !PRODUCTION,
                 exports: 'named',
             },
-              
+
         watch: {
             clearScreen: true,
             exclude: ['node_modules/**'],
@@ -174,10 +177,7 @@ if (PRODUCTION) {
     // Minified version
     ROLLUP.push({
         input: 'dist/ui.js',
-        plugins: [
-            buildProgress(),
-            terser(TERSER_OPTIONS),
-        ],
+        plugins: [buildProgress(), terser(TERSER_OPTIONS)],
         output: [
             {
                 format: 'es',

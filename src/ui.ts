@@ -1,1 +1,1 @@
-export { UIContextualMenuElement } from './menus/contextual-menu-element';
+export { UIContextMenuElement } from './menus/context-menu-element';

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+<head>
+    <meta charset="utf-8" />
+    <title>ui-js Web Components Playground</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="../../dist/ui.js"></script>
+    <style>
+        .zebra-zone {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 6em;
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #999;
+            background: repeating-linear-gradient(-45deg,
+                    #ffffff,
+                    #fff 40px,
+                    #eeeeee 40px,
+                    #eee 80px);
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>ui-js Web Components Playground</h1>
+    </header>
+    <main class='centered' tabindex="0">
+        <div class='zebra-zone'>
+            <ui-context-menu>
+                <script type='application/json'>
+                            [
+                {"label": "Cut"},
+                {"label": "Copy"},
+                {"label": "Paste"},
+                {
+                                "label": "Paste as Graphic",
+                    "enabled": false
+                },
+                {"type": "separator"},
+                {
+                                "label": "Fence",
+                    "submenu": [
+                        {"label": "()"},
+                        {"label": "[]"},
+                        {"label": "}"}
+                    ]
+                },
+                {"type": "separator"},
+                {"label": "Insert Row Before"},
+                {"label": "Insert Row After"},
+                {"label": "Insert Column Before"},
+                {"label": "Insert Column After"}
+            ]
+    </script>
+            </ui-context-menu>
+        </div>
+
+</body>
+
+</html>

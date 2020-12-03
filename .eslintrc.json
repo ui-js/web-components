@@ -19,7 +19,7 @@
         "project": "./tsconfig.eslint.json",
 
         // "ecmaFeatures": { "jsx": false }, // default
-        "ecmaVersion": 2020,
+        "ecmaVersion": 2021,
         // "sourceType": "module" // Allow the use of import
         "extraFileExtensions": [".less"]
     },
@@ -256,16 +256,6 @@
         // "no-undef": "warn",
         "no-unreachable": "warn",
         "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
-        "@typescript-eslint/no-unused-vars": [
-            "error",
-            {
-                "argsIgnorePattern": "^_"
-                // "varsIgnorePattern": "^_",
-                // "vars": "all",
-                // "args": "after-used",
-                // "ignoreRestSiblings": false
-            }
-        ],
 
         "constructor-super": "warn",
 
@@ -285,7 +275,7 @@
         "new-cap": "warn",
         "no-bitwise": "off",
         "no-console": "off",
-        "no-dupe-class-members": "off", // Support TypeScritp polymorphism
+        "no-dupe-class-members": "off", // Support TypeScript polymorphism
         "no-else-return": "warn",
         "no-eval": "error",
         "no-fallthrough": "error",
@@ -312,7 +302,17 @@
             // Typescript-specific rules
             "files": ["*.ts"],
             "rules": {
-                // "@typescript-eslint/prefer-optional-chain": "warn",
+                "@typescript-eslint/no-unused-vars": [
+                    "error",
+                    {
+                        "argsIgnorePattern": "^_"
+                        // "varsIgnorePattern": "^_",
+                        // "vars": "all",
+                        // "args": "after-used",
+                        // "ignoreRestSiblings": false
+                    }
+                ],
+                "@typescript-eslint/prefer-optional-chain": "warn",
                 "@typescript-eslint/prefer-nullish-coalescing": "warn",
 
                 "@typescript-eslint/naming-convention": [
