@@ -70,7 +70,7 @@ export default UIPopupMenuElement;
 
 declare global {
     /** @internal */
-    interface Window {
+    export interface Window {
         UIPopupMenuElement: typeof UIPopupMenuElement;
     }
 }

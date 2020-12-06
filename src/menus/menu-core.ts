@@ -1,3 +1,7 @@
+import {
+    KeyboardModifiers,
+    keyboardModifiersFromEvent,
+} from '../common/events';
 import { addPart, removePart, UIElement } from '../common/ui-element';
 import { UIMenuItemElement } from './menu-item-element';
 import { RootMenu } from './root-menu';
@@ -6,6 +10,11 @@ export const MENU_TEMPLATE = document.createElement('template');
 MENU_TEMPLATE.innerHTML = `<ul></ul><slot></slot>`;
 export const MENU_STYLE = document.createElement('template');
 MENU_STYLE.innerHTML = `<style>
+*,
+::before,
+::after {
+    box-sizing: border-box;
+}
 :host {
     display: none;
     color-scheme: light dark;
@@ -14,11 +23,17 @@ MENU_STYLE.innerHTML = `<style>
     --menu-bg: #e2e2e2;
     --active-bg: #5898ff;
     --active-bg-dimmed: #c5c5c5;
+    -webkit-user-select: none;  /* Important: Safari iOS doesn't respect user-select */
+    user-select: none;
+    cursor: default;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: rgba(0 0 0 0);
 }
 :host([hidden]) {
     display: none;
 }
 :host([disabled]) {
+    pointer-events: none;
     opacity:  .5;
 }
 :host(:focus), :host(:focus-within) {
@@ -96,6 +111,7 @@ ul > li > .label {
     border: 1px solid transparent;
     white-space: nowrap;
 }
+
 ul > li > .label.indent {
     margin-left: 12px;
 }
@@ -107,7 +123,7 @@ ul > li[role=separator] {
     margin-right: 15px;
     padding-top: 5px;
     margin-bottom: 5px;
-    width: 100%;
+    width: calc(100% - 30px);
 }
 ul > li[aria-disabled=true] {
     opacity: .5;
@@ -155,13 +171,6 @@ ul > li[aria-haspopup=true].active::after {
     }
 }
 </style>`;
-
-export type KeyboardModifiers = {
-    alt: boolean;
-    control: boolean;
-    shift: boolean;
-    meta: boolean;
-};
 
 export type MenuItemTemplate = {
     onSelect?: (ev: CustomEvent<MenuSelectEvent>) => void;
@@ -325,6 +334,17 @@ export class Menu {
 
     get menuItems(): MenuItem[] {
         return this._menuItems;
+    }
+
+    set menuItemTemplates(value: MenuItemTemplate[]) {
+        this._menuItemsTemplate = value;
+        if (this._element) {
+            if (this.menuItems.filter((x) => !x.hidden).length === 0) {
+                this.hide();
+                return;
+            }
+            this.updateMenu();
+        }
     }
 
     /** First activable menu item */
@@ -493,10 +513,12 @@ export class Menu {
 
         options?.parent?.appendChild(this.element);
 
-        if (isFinite(options?.clientY) && isFinite(options?.clientY)) {
+        if (isFinite(options?.clientX) && isFinite(options?.clientY)) {
             this.element.style.position = 'absolute';
-            this.element.style.top = Number(options.clientY).toString() + 'px';
-            this.element.style.left = Number(options.clientX).toString() + 'px';
+            this.element.style.top =
+                Number(Math.round(options.clientY)).toString() + 'px';
+            this.element.style.left =
+                Number(Math.round(options.clientX)).toString() + 'px';
         }
 
         this.element.focus();
@@ -570,108 +592,6 @@ export class Menu {
     }
 }
 
-//
-//
-//
-
-const PRINTABLE_KEYCODE = [
-    'Backquote', // Japanese keyboard: hankaku/zenkaku/kanji key, which is non-printable
-    'Digit0',
-    'Digit1',
-    'Digit2',
-    'Digit3',
-    'Digit4',
-    'Digit5',
-    'Digit6',
-    'Digit7',
-    'Digit8',
-    'Digit9',
-    'Minus',
-    'Equal',
-    'IntlYen', // Japanese Keyboard. Russian keyboard: \/
-
-    'KeyQ', // AZERTY keyboard: labeled 'a'
-    'KeyW', // AZERTY keyboard: labeled 'z'
-    'KeyE',
-    'KeyR',
-    'KeyT',
-    'KeyY', // QWERTZ keyboard: labeled 'z'
-    'KeyU',
-    'KeyI',
-    'KeyO',
-    'KeyP',
-    'BracketLeft',
-    'BracketRight',
-    'Backslash', // May be labeled #~ on UK 102 keyboard
-    'KeyA', // AZERTY keyboard: labeled 'q'
-    'KeyS',
-    'KeyD',
-    'KeyF',
-    'KeyG',
-    'KeyH',
-    'KeyJ',
-    'KeyK',
-    'KeyL',
-    'Semicolon',
-    'Quote',
-    'IntlBackslash', // QWERTZ keyboard '><'
-    'KeyZ', // AZERTY: 'w', QWERTZ: 'y'
-    'KeyX',
-    'KeyC',
-    'KeyV',
-    'KeyB',
-    'KeyN',
-    'KeyM',
-    'Comma',
-    'Period',
-    'Slash',
-    'IntlRo', // Japanse keyboard '\ろ'
-
-    'Space',
-
-    'Numpad0',
-    'Numpad1',
-    'Numpad2',
-    'Numpad3',
-    'Numpad4',
-    'Numpad5',
-    'Numpad6',
-    'Numpad7',
-    'Numpad8',
-    'Numpad9',
-    'NumpadAdd',
-    'NumpadComma',
-    'NumpadDecimal',
-    'NumpadDivide',
-    'NumpadEqual',
-    'NumpadHash',
-    'NumpadMultiply',
-    'NumpadParenLeft',
-    'NumpadParenRight',
-    'NumpadStar',
-    'NumpadSubstract',
-];
-
-export function keyboardModifiersFromEvent(
-    ev: MouseEvent | KeyboardEvent
-): KeyboardModifiers {
-    const result = {
-        alt: false,
-        control: false,
-        shift: false,
-        meta: false,
-    };
-    if (ev.altKey) result.alt = true;
-    if (ev.ctrlKey) result.control = true;
-    if (ev.metaKey) result.meta = true;
-    if (ev.shiftKey) result.shift = true;
-    return result;
-}
-
-export function distance(dx: number, dy: number): number {
-    return Math.sqrt(dx * dx + dy * dy);
-}
-
 export function evalToBoolean(
     item: MenuItemTemplate,
     value:
@@ -709,34 +629,6 @@ export function evalToString(
     return undefined;
 }
 
-export function equalKeyboardModifiers(
-    a: KeyboardModifiers,
-    b: KeyboardModifiers
-): boolean {
-    if ((!a && b) || (a && !b)) return false;
-    return (
-        a.alt === b.alt &&
-        a.control === b.control &&
-        a.shift === b.shift &&
-        a.meta === b.meta
-    );
-}
-
-export function mightProducePrintableCharacter(evt: KeyboardEvent): boolean {
-    if (evt.ctrlKey || evt.metaKey) {
-        // ignore ctrl/cmd-combination but not shift/alt-combinations
-        return false;
-    }
-
-    // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key/Key_Values
-    if (evt.key === 'Dead') return false;
-
-    // When issued via a composition, the `code` field is empty
-    if (evt.code === '') return true;
-
-    return PRINTABLE_KEYCODE.indexOf(evt.code) >= 0;
-}
-
 const CHEVRON_RIGHT_TEMPLATE = document.createElement('template');
 CHEVRON_RIGHT_TEMPLATE.innerHTML = `<span aria-hidden="true" class="right-chevron"><svg focusable="false" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path fill="currentColor" d="M285.476 272.971L91.132 467.314c-9.373 9.373-24.569 9.373-33.941 0l-22.667-22.667c-9.357-9.357-9.375-24.522-.04-33.901L188.505 256 34.484 101.255c-9.335-9.379-9.317-24.544.04-33.901l22.667-22.667c9.373-9.373 24.569-9.373 33.941 0L285.475 239.03c9.373 9.372 9.373 24.568.001 33.941z"></path></svg></span>`;
 
@@ -757,7 +649,7 @@ declare global {
      * Map the custom event names to types
      * @internal
      */
-    interface DocumentEventMap {
+    export interface DocumentEventMap {
         ['select']: CustomEvent<MenuSelectEvent>;
     }
 }
@@ -777,8 +669,8 @@ export abstract class MenuItem {
     }
 
     handleEvent(event: Event): void {
-        if (event.type === 'mouseenter') {
-            const ev = event as MouseEvent;
+        if (event.type === 'pointerenter') {
+            const ev = event as PointerEvent;
             this.parentMenu.rootMenu.cancelDelayedOperation();
             // If there is a submenu open, and the mouse is moving in the
             // triangle formed from the current mouse location and the two
@@ -802,19 +694,18 @@ export abstract class MenuItem {
                     });
                 }
             }
-        } else if (event.type === 'mouseleave') {
+        } else if (event.type === 'pointerleave') {
             if (this.parentMenu.rootMenu.activeMenu === this.parentMenu) {
                 this.parentMenu.activeMenuItem = null;
             }
-        } else if (event.type === 'mouseup') {
-            const ev = event as MouseEvent;
+        } else if (event.type === 'pointerup') {
             // when modal, the items are activated on click,
             // so ignore mouseup
             if (this.parentMenu.rootMenu.state !== 'modal') {
-                this.select(keyboardModifiersFromEvent(ev));
+                this.select(keyboardModifiersFromEvent(event));
             }
-            ev.stopPropagation();
-            ev.preventDefault();
+            event.stopPropagation();
+            event.preventDefault();
         }
     }
 
@@ -908,8 +799,8 @@ export abstract class MenuItem {
         });
     }
 
-    movingTowardSubmenu(ev: MouseEvent): boolean {
-        const lastEv = this.parentMenu.rootMenu.lastMouseEvent;
+    movingTowardSubmenu(ev: PointerEvent): boolean {
+        const lastEv = this.parentMenu.rootMenu.lastMoveEvent;
         if (!lastEv) return false;
 
         const deltaT = ev.timeStamp - lastEv.timeStamp;
@@ -1013,7 +904,7 @@ export class MenuItemFromTemplate extends MenuItem {
         }
     }
 
-    get type() {
+    get type(): 'normal' | 'separator' | 'submenu' | 'checkbox' | 'radio' {
         return this._type;
     }
     get label(): string {
@@ -1072,9 +963,9 @@ export class MenuItemFromTemplate extends MenuItem {
             li.setAttribute('aria-disabled', 'true');
         } else {
             li.removeAttribute('aria-disabled');
-            li.addEventListener('mouseenter', this);
-            li.addEventListener('mouseleave', this);
-            li.addEventListener('mouseup', this);
+            li.addEventListener('pointerenter', this);
+            li.addEventListener('pointerleave', this);
+            li.addEventListener('pointerup', this);
         }
 
         const span = document.createElement('span');
@@ -1248,9 +1139,9 @@ export class MenuItemFromElement extends MenuItem {
             li.setAttribute('aria-disabled', 'true');
         } else {
             li.removeAttribute('aria-disabled');
-            li.addEventListener('mouseenter', this);
-            li.addEventListener('mouseleave', this);
-            li.addEventListener('mouseup', this);
+            li.addEventListener('pointerenter', this);
+            li.addEventListener('pointerleave', this);
+            li.addEventListener('pointerup', this);
         }
 
         if (!this.disabled) {

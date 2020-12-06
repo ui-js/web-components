@@ -1,20 +1,19 @@
 import {
-    Menu,
-    MenuItemTemplate,
-    KeyboardModifiers,
     equalKeyboardModifiers,
+    KeyboardModifiers,
     keyboardModifiersFromEvent,
     mightProducePrintableCharacter,
-} from './menu-core';
+} from '../common/events';
+import { Scrim } from '../common/scrim';
+import { Menu, MenuItemTemplate } from './menu-core';
 
 export class RootMenu extends Menu {
-    lastMouseEvent: MouseEvent;
+    lastMoveEvent: PointerEvent;
 
     private typingBufferResetTimer: number;
     private typingBuffer: string;
-    private _scrim: HTMLElement;
+    private _scrim: Scrim;
     private _openTimestamp: number;
-    private previousActiveElement: HTMLOrSVGElement;
     private currentKeyboardModifiers: KeyboardModifiers;
     private hysteresisTimer: number;
     /**
@@ -59,6 +58,11 @@ export class RootMenu extends Menu {
         this.currentKeyboardModifiers = options?.keyboardModifiers;
         this.typingBuffer = '';
         this.state = 'closed';
+
+        this._scrim = new Scrim({
+            dismissOnClick: true,
+            onHide: () => this.hide(),
+        });
 
         this._host = options?.host;
     }
@@ -196,18 +200,14 @@ export class RootMenu extends Menu {
         }
     }
 
-    handleMouseMoveEvent(event: MouseEvent): void {
-        this.lastMouseEvent = event;
-    }
-
     handleEvent(event: Event): void {
         if (event.type === 'keydown') {
             this.handleKeydownEvent(event as KeyboardEvent);
         } else if (event.type === 'keyup') {
             this.handleKeyupEvent(event as KeyboardEvent);
-        } else if (event.type === 'mousemove') {
-            this.handleMouseMoveEvent(event as MouseEvent);
-        } else if (event.type === 'mouseup' && event.target === this._scrim) {
+        } else if (event.type === 'pointermove') {
+            this.lastMoveEvent = event as PointerEvent;
+        } else if (event.type === 'pointerup' && event.target === this.scrim) {
             if (
                 isFinite(this.rootMenu._openTimestamp) &&
                 Date.now() - this.rootMenu._openTimestamp < 120
@@ -218,10 +218,6 @@ export class RootMenu extends Menu {
                 // Cancel
                 this.hide();
             }
-        } else if (event.type === 'click' && event.target === this._scrim) {
-            this.hide();
-            event.preventDefault();
-            event.stopPropagation();
         } else if (event.type === 'contextmenu') {
             event.preventDefault();
             event.stopPropagation();
@@ -229,51 +225,32 @@ export class RootMenu extends Menu {
     }
 
     private get scrim(): HTMLElement {
-        if (this._scrim) return this._scrim;
-
-        this._scrim = document.createElement('div');
-        this._scrim.setAttribute('role', 'presentation');
-
-        this._scrim.className = 'scrim';
-
-        return this._scrim;
+        return this._scrim.element;
     }
 
-    private connectScrim(el: Node): void {
+    private connectScrim(root: Node): void {
         const scrim = this.scrim;
-        el.appendChild(scrim);
-        scrim.addEventListener('click', this);
-        scrim.addEventListener('mouseup', this);
+        scrim.addEventListener('pointerup', this);
 
         scrim.addEventListener('contextmenu', this);
 
         scrim.addEventListener('keydown', this);
         scrim.addEventListener('keyup', this);
-        scrim.addEventListener('mousemove', this);
+        scrim.addEventListener('pointermove', this);
 
-        // Prevent scrolling in the background
-        const scrollbarWidth =
-            window.innerWidth - document.documentElement.clientWidth;
-        document.body.style.overflow = 'hidden';
-        document.body.style.marginRight = `${scrollbarWidth}px`;
+        this._scrim.show({ root });
     }
 
     private disconnectScrim(): void {
         const scrim = this.scrim;
-        scrim.removeEventListener('click', this);
-        scrim.removeEventListener('mouseup', this);
+        scrim.removeEventListener('pointerup', this);
 
         scrim.removeEventListener('contextmenu', this);
 
         scrim.removeEventListener('keydown', this);
         scrim.removeEventListener('keyup', this);
-        scrim.removeEventListener('mousemove', this);
-
-        scrim.parentNode.removeChild(scrim);
-
-        // Restore background scrolling
-        document.body.style.marginRight = '';
-        document.body.style.overflow = 'visible';
+        scrim.removeEventListener('pointermove', this);
+        this._scrim.hide();
     }
 
     get rootMenu(): RootMenu {
@@ -287,8 +264,6 @@ export class RootMenu extends Menu {
         parent?: Node; // Where the menu should attach
         keyboardModifiers?: KeyboardModifiers;
     }): boolean {
-        // Remember the previously focused element. We'll restore it when we close.
-        const activeElement = deepActiveElement();
         if (super.show({ ...options, parent: this.scrim })) {
             // Record the opening time.
             // If we receive a mouseup within a small delta of the open time stamp
@@ -296,9 +271,11 @@ export class RootMenu extends Menu {
             this._openTimestamp = Date.now();
             this.state = 'open';
 
-            this.previousActiveElement = activeElement;
-
-            this.connectScrim(options?.parent ?? document.body);
+            this.connectScrim(options?.parent);
+            // Note: any attempt at focusing before
+            // connecting the scrim would have been a no-op
+            // Focus now.
+            this.element.focus();
             return true;
         }
         return false;
@@ -309,10 +286,8 @@ export class RootMenu extends Menu {
         if (this.state !== 'closed') {
             this.activeMenuItem = null;
             super.hide();
-            this.disconnectScrim();
             this.state = 'closed';
-            // Restore the previously focused element
-            this.previousActiveElement?.focus?.();
+            this.disconnectScrim();
         }
     }
 
@@ -337,6 +312,11 @@ export class RootMenu extends Menu {
         }
     }
 
+    /**
+     * Delay (in milliseconds) before displaying a submenu.
+     * Prevents distracting "flashing" of submenus when moving through the
+     * options in a menu.
+     */
     get submenuHysteresis(): number {
         return 120;
     }
@@ -355,12 +335,4 @@ function isDynamic(item: MenuItemTemplate): boolean {
         return result || item.submenu.some(isDynamic);
     }
     return result;
-}
-
-function deepActiveElement(): HTMLOrSVGElement | null {
-    let a = document.activeElement;
-    while (a?.shadowRoot?.activeElement) {
-        a = a.shadowRoot.activeElement;
-    }
-    return (a as unknown) as HTMLOrSVGElement;
 }

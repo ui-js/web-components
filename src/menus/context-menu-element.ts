@@ -1,11 +1,12 @@
-import { UIElement } from '../common/ui-element';
 import {
-    KeyboardModifiers,
+    eventLocation,
+    onLongPress,
     keyboardModifiersFromEvent,
-    MenuItemTemplate,
-    MENU_TEMPLATE,
-    MENU_STYLE,
-} from './menu-core';
+    KeyboardModifiers,
+    LongPressDetector,
+} from '../common/events';
+import { UIElement } from '../common/ui-element';
+import { MenuItemTemplate, MENU_TEMPLATE, MENU_STYLE } from './menu-core';
 import { RootMenu } from './root-menu';
 
 /**
@@ -31,37 +32,41 @@ import { RootMenu } from './root-menu';
  */
 export class UIContextMenuElement extends UIElement {
     private rootMenu: RootMenu;
-    constructor(inMenuItems?: MenuItemTemplate[]) {
+    // The menu items specified via a constructor or setter
+    private templateMenuItems: MenuItemTemplate[];
+
+    private longPressDetector: LongPressDetector;
+
+    constructor(menuItems?: MenuItemTemplate[]) {
         super({
             template: MENU_TEMPLATE,
             style: MENU_STYLE,
         });
+        this.templateMenuItems = menuItems ?? [];
+    }
 
-        // Inline menu items (as a JSON structure in a <script> tag
-        // in the markup)
-        let jsonMenuItems = this.json;
-        if (!Array.isArray(jsonMenuItems)) jsonMenuItems = [];
-
-        this.rootMenu = new RootMenu(
-            [...(inMenuItems ?? []), ...jsonMenuItems],
-            {
-                host: this.shadowRoot.host,
-                assignedElement: this.shadowRoot.querySelector<HTMLElement>(
-                    'ul'
-                ),
-            }
-        );
+    set menuItems(menuItems: MenuItemTemplate[]) {
+        this.templateMenuItems = menuItems;
+        if (this.rootMenu) {
+            this.rootMenu.menuItemTemplates = menuItems;
+        }
+    }
+    get menuItems(): MenuItemTemplate[] {
+        return this.templateMenuItems;
     }
 
     /**
      * @internal
      */
     handleEvent(event: Event): void {
+        this.longPressDetector?.dispose();
+        this.longPressDetector = undefined;
+
         if (event.type === 'contextmenu') {
             const evt = event as MouseEvent;
             this.show({
-                clientX: evt.clientX,
-                clientY: evt.clientY,
+                clientX: Math.round(evt.clientX),
+                clientY: Math.round(evt.clientY),
                 keyboardModifiers: keyboardModifiersFromEvent(evt),
             });
             event.preventDefault();
@@ -73,20 +78,31 @@ export class UIContextMenuElement extends UIElement {
                 (evt.code === 'F10' && evt.shiftKey)
             ) {
                 // shift+F10 = contextual menu
-                // Get the middle of the parent
+                // Get the center of the parent
                 const bounds = this.parentElement?.getBoundingClientRect();
                 if (bounds) {
                     this.show({
-                        clientX: bounds.left + bounds.width / 2,
-                        clientY: bounds.top + bounds.height / 2,
+                        clientX: Math.round(bounds.left + bounds.width / 2),
+                        clientY: Math.round(bounds.top + bounds.height / 2),
                         keyboardModifiers: keyboardModifiersFromEvent(evt),
                     });
                     event.preventDefault();
                     event.stopPropagation();
                 }
             }
-        } else {
-            // @todo press-and-hold
+        } else if (event.type === 'pointerdown') {
+            if (event.target === this.shadowRoot.host.parentNode) {
+                const pt = eventLocation(event);
+                this.longPressDetector = new LongPressDetector(event, () => {
+                    this.show({
+                        clientX: pt[0],
+                        clientY: pt[1],
+                        keyboardModifiers: keyboardModifiersFromEvent(event),
+                    });
+                });
+                event.preventDefault();
+                event.stopPropagation();
+            }
         }
     }
     /**
@@ -94,20 +110,24 @@ export class UIContextMenuElement extends UIElement {
      * @internal
      */
     connectedCallback(): void {
+        super.connectedCallback();
         // Listen for contextual menu in the parent
         const parent = this.parentNode;
         parent.addEventListener('contextmenu', this);
         parent.addEventListener('keydown', this);
+        parent.addEventListener('pointerdown', this);
     }
     /**
      * Custom elements lifecycle hooks
      * @internal
      */
     disconnectedCallback(): void {
+        super.disconnectedCallback();
         const parent = this.parentNode;
         if (parent) {
             parent.removeEventListener('contextmenu', this);
             parent.removeEventListener('keydown', this);
+            parent.removeEventListener('pointerdown', this);
         }
     }
     /**
@@ -115,7 +135,7 @@ export class UIContextMenuElement extends UIElement {
      */
     focus(): void {
         super.focus();
-        if (this.rootMenu.state !== 'closed') {
+        if (this.rootMenu?.state !== 'closed') {
             if (this.rootMenu.activeMenuItem) {
                 this.rootMenu.activeMenuItem.element.focus();
             } else {
@@ -138,6 +158,24 @@ export class UIContextMenuElement extends UIElement {
         clientY?: number;
         keyboardModifiers?: KeyboardModifiers;
     }): void {
+        if (!this.rootMenu) {
+            // Import inline (in the component) style sheet
+            this.importStyle();
+
+            // Inline menu items (as a JSON structure in a <script> tag
+            // in the markup)
+            let jsonMenuItems = this.json;
+            if (!Array.isArray(jsonMenuItems)) jsonMenuItems = [];
+            this.rootMenu = new RootMenu(
+                [...this.templateMenuItems, ...jsonMenuItems],
+                {
+                    host: this.shadowRoot.host,
+                    assignedElement: this.shadowRoot.querySelector<HTMLElement>(
+                        'ul'
+                    ),
+                }
+            );
+        }
         if (this.rootMenu.show({ ...options, parent: this.shadowRoot })) {
             if (!this.hasAttribute('tabindex')) {
                 this.setAttribute('tabindex', '-1');
@@ -155,7 +193,7 @@ export class UIContextMenuElement extends UIElement {
      * override that should be very rarely needed.
      */
     hide(): void {
-        this.rootMenu.hide();
+        this.rootMenu?.hide();
     }
 }
 
@@ -163,7 +201,7 @@ export default UIContextMenuElement;
 
 declare global {
     /** @internal */
-    interface Window {
+    export interface Window {
         UIContextMenuElement: typeof UIContextMenuElement;
     }
 }

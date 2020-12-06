@@ -28,14 +28,79 @@ export class UIElement extends HTMLElement {
             style.textContent = options.style;
             this.shadowRoot.append(style);
         }
+    }
 
-        // If there is an embedded <style> tag in the slot
-        // "import" it in the shadow dom
-        if (this.importedStyle) {
-            const style = document.createElement('style');
-            style.textContent = this.importedStyle;
-            this.shadowRoot.append(style);
-        }
+    /**
+     * Declare that an attribute should be reflected as a property
+     */
+    reflectStringAttribute(attrName: string, propName = attrName): void {
+        // Attributes should be all lower case, kebab-case.
+        console.assert(attrName.toLowerCase() === attrName);
+        Object.defineProperty(this, propName, {
+            enumerable: true,
+            get(): string {
+                return this.getAttribute(attrName) ?? '';
+            },
+            set(value: string) {
+                this.setAttribute(attrName, value);
+            },
+        });
+    }
+    /**
+     * Declare that an attribute should be reflected as a property
+     */
+    reflectBooleanAttribute(attrName: string, propName = attrName): void {
+        // Attributes should be all lower case, kebab-case.
+        console.assert(attrName.toLowerCase() === attrName);
+        Object.defineProperty(this, propName, {
+            enumerable: true,
+            get(): boolean {
+                return this.hasAttribute(attrName);
+            },
+            set(value: boolean) {
+                if (value) {
+                    this.setAttribute(attrName, '');
+                } else {
+                    this.removeAttribute(attrName);
+                }
+            },
+        });
+    }
+
+    reflectBooleanAttributes(
+        attrNames: (string | [attrName: string, propName: string])[]
+    ): void {
+        attrNames.forEach((x) => {
+            if (typeof x === 'string') {
+                this.reflectBooleanAttribute(x);
+            } else {
+                this.reflectBooleanAttribute(x[0], x[1]);
+            }
+        });
+    }
+    reflectStringAttributes(
+        attrNames: (string | [attrName: string, propName: string])[]
+    ): void {
+        attrNames.forEach((x) => {
+            if (typeof x === 'string') {
+                this.reflectStringAttribute(x);
+            } else {
+                this.reflectStringAttribute(x[0], x[1]);
+            }
+        });
+    }
+
+    /**
+     * @internal
+     */
+    connectedCallback(): void {
+        return;
+    }
+    /**
+     * @internal
+     */
+    disconnectedCallback(): void {
+        return;
     }
 
     /**
@@ -91,6 +156,17 @@ export class UIElement extends HTMLElement {
                 .join('');
         }
         return this._style;
+    }
+
+    /** If there is an embedded <style> tag in the slot
+     *  "import" it in the shadow dom
+     */
+    importStyle(): void {
+        if (this.importedStyle) {
+            const style = document.createElement('style');
+            style.textContent = this.importedStyle;
+            this.shadowRoot.append(style);
+        }
     }
 }
 

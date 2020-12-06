@@ -90,56 +90,9 @@ MENU_ITEM_TEMPLATE.innerHTML = '<slot></slot>';
 
 export class UIMenuItemElement extends UIElement {
     static get observedAttributes(): string[] {
-        return ['disabled', 'checked', 'active', 'type'];
+        return ['type'];
     }
 
-    get checked(): boolean {
-        return this.hasAttribute('checked');
-    }
-
-    set checked(val: boolean) {
-        if (val) {
-            this.setAttribute('checked', '');
-        } else {
-            this.removeAttribute('checked');
-        }
-    }
-
-    get disabled(): boolean {
-        return this.hasAttribute('disabled');
-    }
-
-    set disabled(val: boolean) {
-        if (val) {
-            this.setAttribute('disabled', '');
-        } else {
-            this.removeAttribute('disabled');
-        }
-    }
-
-    get separator(): boolean {
-        return this.hasAttribute('separator');
-    }
-
-    set separator(val: boolean) {
-        if (val) {
-            this.setAttribute('separator', '');
-        } else {
-            this.removeAttribute('separator');
-        }
-    }
-
-    get active(): boolean {
-        return this.hasAttribute('active');
-    }
-
-    set active(val: boolean) {
-        if (val) {
-            this.setAttribute('active', '');
-        } else {
-            this.removeAttribute('active');
-        }
-    }
     get type(): string {
         return this.hasAttribute('type') ? this.getAttribute('type') : 'normal';
     }
@@ -153,6 +106,12 @@ export class UIMenuItemElement extends UIElement {
     }
     constructor() {
         super({ template: MENU_ITEM_TEMPLATE, style: MENU_ITEM_STYLE });
+        this.reflectBooleanAttributes([
+            'active',
+            'separator',
+            'disabled',
+            'checked',
+        ]);
     }
 }
 
@@ -160,7 +119,7 @@ export default UIMenuItemElement;
 
 declare global {
     /** @internal */
-    interface Window {
+    export interface Window {
         UIMenuItemElement: typeof UIMenuItemElement;
     }
 }

@@ -20,29 +20,31 @@
                     #fff 40px,
                     #eeeeee 40px,
                     #eee 80px);
+            margin-bottom: 2em;
+            margin-top: 1em;
         }
     </style>
 </head>
 
 <body>
     <header>
-        <h1>ui-js Web Components Playground</h1>
+        <h1>ui-js Web Components Playground 2</h1>
     </header>
-    <main class='centered' tabindex="0">
-        <div class='zebra-zone'>
+    <main class='centered'>
+        <div tabindex="0" class='zebra-zone'>
             <ui-context-menu>
                 <script type='application/json'>
-                            [
+                [
                 {"label": "Cut"},
                 {"label": "Copy"},
                 {"label": "Paste"},
                 {
-                                "label": "Paste as Graphic",
+                    "label": "Paste as Graphic",
                     "enabled": false
                 },
                 {"type": "separator"},
                 {
-                                "label": "Fence",
+                    "label": "Fence",
                     "submenu": [
                         {"label": "()"},
                         {"label": "[]"},
@@ -54,10 +56,130 @@
                 {"label": "Insert Row After"},
                 {"label": "Insert Column Before"},
                 {"label": "Insert Column After"}
-            ]
-    </script>
+                ]
+                </script>
             </ui-context-menu>
+            Simple menu
         </div>
+
+
+        <style>
+            ui-context-menu.custom-menu::part(menu-container) {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: space-evenly;
+                max-width: 228px;
+            }
+
+            ui-context-menu.custom-menu::part(menu-item) {
+                width: 53px;
+                height: 53px;
+                margin: 0;
+                padding: 4px;
+                box-sizing: border-box;
+                border: 3px solid transparent;
+            }
+
+            ui-context-menu.custom-menu::part(active) {
+                border: 3px solid white;
+                border-radius: 8px;
+                background: transparent;
+            }
+        </style>
+        <div class="zebra-zone">
+            <ui-context-menu class='custom-menu'>
+                <style>
+                    ui-menu-item {
+                        width: 100%;
+                        height: 100%;
+                        border-radius: 8px;
+                    }
+                </style>
+                <ui-menu-item style="background:#397ae3"></ui-menu-item>
+                <ui-menu-item style="background:#edb50c"></ui-menu-item>
+                <ui-menu-item style="background:#ed570c"></ui-menu-item>
+                <ui-menu-item style="background:#bd0865"></ui-menu-item>
+                <ui-menu-item style="background:#ed40d0"></ui-menu-item>
+                <ui-menu-item style="background:#ed7f5a"></ui-menu-item>
+                <ui-menu-item separator></ui-menu-item>
+                <ui-menu-item style="background:#18cc48"></ui-menu-item>
+                <ui-menu-item style="background:#6bed5a"></ui-menu-item>
+                <ui-menu-item style="background:#327aad"></ui-menu-item>
+                <ui-menu-item style="background:#86dbb8"></ui-menu-item>
+            </ui-context-menu>
+            Custom menu
+        </div>
+
+
+        <div tabindex="0" class="zebra-zone">
+            <ui-context-menu id='font-list'></ui-context-menu>
+            Font menu
+        </div>
+        <script>
+            document.getElementById('font-list').menuItems = [
+                { label: "Andale Mono" },
+                { label: "Apple Chancery" },
+                { label: "Arial" },
+                { label: "Arial Black" },
+                { label: "Avenir" },
+                { label: "Avenir Next" },
+                { label: "Baskervill" },
+                { label: "Big Caslon" },
+                { label: "Bodoni" },
+                { label: "Bodoni Oldstyle" },
+                { label: "Brush Script" },
+                { label: "Chalkboard" },
+                { label: "Chalkduster" },
+                { label: "Charter" },
+                { label: "Cochin" },
+                { label: "Comic Sans" },
+                { label: "Copperplate" },
+                { label: "Corsiva" },
+                { label: "Courier" },
+                { label: "Courier New" },
+                { label: "Damascus" },
+                { label: "Didot" },
+                { label: "DIN" },
+                { label: "Futura" },
+                { label: "Geneva" },
+                { label: "Georgia" },
+                { label: "Gill Sans" },
+                { label: "Helvetica" },
+                { label: "Helvetica Neue" },
+                { label: "Herculanum" },
+                { label: "Hoefler Text" },
+                { label: "IBM Plex" },
+                { label: "IBM Plex Sans" },
+                { label: "IBM Plex Mono" },
+                { label: "Impact" },
+                { label: "Lucida Grande" },
+                { label: "Marker Felt" },
+                { label: "Menlo" },
+                { label: "Monaco" },
+                { label: "Noto Sans" },
+                { label: "Optima" },
+                { label: "Optima Condensed" },
+                { label: "Palatino" },
+                { label: "Papyrus" },
+                { label: "Rockwell" },
+                { label: "San Francisco" },
+                { label: "Source Sans" },
+                { label: "Symbol" },
+                { label: "Tahoma" },
+                { label: "Times" },
+                { label: "Times New TRoman" },
+                { label: "Trebuchet" },
+                { label: "Verdana" },
+                { label: "Zapf Dingbats" },
+                { label: "Zapfino" },
+
+            ]
+
+        </script>
+
+
+        <!-- <div class='zebra-zone' style='opacity: .5; height: 2048px'>
+        </div> -->
 
 </body>
 
