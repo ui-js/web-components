@@ -1,6 +1,5 @@
 import {
     eventLocation,
-    onLongPress,
     keyboardModifiersFromEvent,
     KeyboardModifiers,
     LongPressDetector,
@@ -65,8 +64,7 @@ export class UIContextMenuElement extends UIElement {
         if (event.type === 'contextmenu') {
             const evt = event as MouseEvent;
             this.show({
-                clientX: Math.round(evt.clientX),
-                clientY: Math.round(evt.clientY),
+                location: [Math.round(evt.clientX), Math.round(evt.clientY)],
                 keyboardModifiers: keyboardModifiersFromEvent(evt),
             });
             event.preventDefault();
@@ -82,8 +80,10 @@ export class UIContextMenuElement extends UIElement {
                 const bounds = this.parentElement?.getBoundingClientRect();
                 if (bounds) {
                     this.show({
-                        clientX: Math.round(bounds.left + bounds.width / 2),
-                        clientY: Math.round(bounds.top + bounds.height / 2),
+                        location: [
+                            Math.round(bounds.left + bounds.width / 2),
+                            Math.round(bounds.top + bounds.height / 2),
+                        ],
                         keyboardModifiers: keyboardModifiersFromEvent(evt),
                     });
                     event.preventDefault();
@@ -95,8 +95,7 @@ export class UIContextMenuElement extends UIElement {
                 const pt = eventLocation(event);
                 this.longPressDetector = new LongPressDetector(event, () => {
                     this.show({
-                        clientX: pt[0],
-                        clientY: pt[1],
+                        location: pt,
                         keyboardModifiers: keyboardModifiersFromEvent(event),
                     });
                 });
@@ -154,8 +153,7 @@ export class UIContextMenuElement extends UIElement {
      * trigger it on click of an item).
      */
     show(options?: {
-        clientX?: number;
-        clientY?: number;
+        location?: [x: number, y: number];
         keyboardModifiers?: KeyboardModifiers;
     }): void {
         if (!this.rootMenu) {
@@ -176,12 +174,14 @@ export class UIContextMenuElement extends UIElement {
                 }
             );
         }
+        this.style.display = 'block';
         if (this.rootMenu.show({ ...options, parent: this.shadowRoot })) {
             if (!this.hasAttribute('tabindex')) {
                 this.setAttribute('tabindex', '-1');
             }
-            this.style.display = 'block';
             this.focus();
+        } else {
+            this.style.display = 'none';
         }
     }
     /**
@@ -194,6 +194,7 @@ export class UIContextMenuElement extends UIElement {
      */
     hide(): void {
         this.rootMenu?.hide();
+        this.style.display = 'none';
     }
 }
 

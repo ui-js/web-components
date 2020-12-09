@@ -1,7 +1,6 @@
 ---
 permalink: /
 title: Welcome to ui-js
-read_time: false
 ---
 
 The **ui-js** web components are native custom elements. They can be used
@@ -9,7 +8,7 @@ with vanilla Javascript or a framework of your choice such as React or Vue.
 
 The **ui-js** CSS styles can be used with HTML markup for simple elements.
 
-All the components follow these principles:
+The ui-js components follow these principles:
 
 -   **ui-js is for everyone** The **ui-js** components are accessible. They can be
     used with screen readers and other assistive technology. The can be localized
@@ -21,6 +20,8 @@ All the components follow these principles:
 -   **ui-js is web native** The **ui-js** components are implemented using native
     web platform technologies, such as web components. They are written in
     Typescript and compiled to Javascript. They support evergreen browsers.
+
+Learn more about some [Essential Principles](./essentials) when using ui-js.
 
 ## Basic Input
 

@@ -45,7 +45,7 @@ export class Scrim {
         el.style.zIndex = '9999';
         el.style.outline = 'none';
         if (this.translucent) {
-            el.style.background = 'rgba(255, 255, 255, .2)';
+            el.style.background = 'rgba(255 255 255 .2)';
             el.style['backdropFilter'] = 'contrast(40%)';
         } else {
             el.style.background = 'transparent';
@@ -122,7 +122,7 @@ export class Scrim {
             return;
         } else if (
             ev.target === document &&
-            (ev.type === 'touchmnove' || ev.type === 'scroll')
+            (ev.type === 'touchmove' || ev.type === 'scroll')
         ) {
             // This is an attempt at scrolling on a touch-device
             this.hide();
@@ -139,4 +139,175 @@ function deepActiveElement(): HTMLOrSVGElement | null {
         a = a.shadowRoot.activeElement;
     }
     return (a as unknown) as HTMLOrSVGElement;
+}
+
+function getDir(el: HTMLElement): 'ltr' | 'rtl' {
+    if (el.dir) return el.dir as 'ltr' | 'rtl';
+    if (el.parentElement) return getDir(el.parentElement);
+    return 'ltr';
+}
+
+/**
+ * Calculate the effective position (width or height) given a starting pos,
+ * a placement (left, top, middle, etc...) and dir (ltr/rtl).
+ */
+function getEffectivePos(
+    pos: number,
+    length: number,
+    placement: 'start' | 'end' | 'middle' | 'left' | 'right' | 'top' | 'bottom',
+    dir: 'ltr' | 'rtl'
+): number {
+    if (placement === 'middle') {
+        return pos - length / 2;
+    } else if (
+        (placement === 'start' && dir === 'ltr') ||
+        (placement === 'end' && dir === 'rtl') ||
+        placement === 'top' ||
+        placement === 'left'
+    ) {
+        return Math.max(0, pos - length);
+    }
+    return pos;
+}
+
+export function getOppositeEffectivePos(
+    pos: number,
+    length: number,
+    placement: 'start' | 'end' | 'middle' | 'left' | 'right' | 'top' | 'bottom',
+    dir: 'ltr' | 'rtl'
+): number {
+    if (placement === 'middle') {
+        return pos - length / 2;
+    } else if (
+        (placement === 'start' && dir === 'ltr') ||
+        (placement === 'end' && dir === 'rtl') ||
+        placement === 'top' ||
+        placement === 'left'
+    ) {
+        return pos;
+    }
+    return pos - length;
+}
+
+/**
+ * Set the position of the element so that it fits in the viewport.
+ *
+ * The element is first positioned at `location`.
+ * If it overflows and there is an alternate location, use the alternate
+ * location to fit the topright at the alternate location.
+ *
+ * If the element still overflows, adjust its location moving it up and to the
+ * left as necessary until it fits (and adjusting its width/height as a result)
+ */
+export function fitInViewport(
+    el: HTMLElement,
+    options: {
+        location: [x: number, y: number];
+        alternateLocation?: [x: number, y: number];
+        verticalPos: 'bottom' | 'top' | 'middle' | 'start' | 'end';
+        horizontalPos: 'left' | 'right' | 'middle' | 'start' | 'end';
+        width?: number;
+        height?: number;
+        maxWidth?: number;
+        maxHeight?: number;
+    }
+): void {
+    const dir = getDir(el) ?? 'ltr';
+
+    // Reset any location, so we can get the natural width/height
+    el.style.position = 'absolute';
+    el.style.overflow = 'hidden';
+    el.style.left = 'auto';
+    el.style.top = 'auto';
+    el.style.right = 'auto';
+    el.style.bottom = 'auto';
+    el.style.height = 'auto';
+    el.style.width = 'auto';
+    el.style.display = 'block';
+
+    const elementBounds = el.getBoundingClientRect();
+
+    //
+    // Vertical positioning
+    //
+    const maxHeight = isFinite(options.maxHeight)
+        ? Math.min(options.maxHeight, window.innerHeight)
+        : window.innerHeight;
+    let height = Math.min(maxHeight, options.height ?? elementBounds.height);
+
+    let top = getEffectivePos(
+        options.location[1],
+        height,
+        options.verticalPos,
+        dir
+    );
+    if (top + height > window.innerHeight - 8) {
+        if (options.alternateLocation) {
+            top = getEffectivePos(
+                options.alternateLocation[1],
+                height,
+                options.verticalPos,
+                dir
+            );
+            if (top + height > window.innerHeight - 8) {
+                top = undefined;
+            }
+        } else {
+            top = undefined;
+        }
+    }
+    if (!isFinite(top)) {
+        // Move element as high as possible
+        top = Math.max(8, window.innerHeight - 8 - height);
+        if (8 + height > window.innerHeight - 8) {
+            // Still doesn't fit, we'll clamp it
+            el.style.bottom = '8px';
+        }
+    }
+    height = Math.min(top + height, window.innerHeight - 8) - top;
+
+    //
+    // Horizontal positioning
+    //
+    const maxWidth = isFinite(options.maxWidth)
+        ? Math.min(options.maxWidth, window.innerWidth)
+        : window.innerWidth;
+
+    let width = Math.min(maxWidth, options.width ?? elementBounds.width);
+
+    let left = getEffectivePos(
+        options.location[0],
+        width,
+        options.horizontalPos,
+        dir
+    );
+    if (left + width > window.innerWidth - 8) {
+        if (options.alternateLocation) {
+            left = getOppositeEffectivePos(
+                options.alternateLocation[0],
+                width,
+                options.verticalPos,
+                dir
+            );
+            if (left + width > window.innerWidth - 8) {
+                left = undefined;
+            }
+        } else {
+            left = undefined;
+        }
+    }
+    if (!isFinite(left)) {
+        // Move element as high as possible
+        left = Math.max(8, window.innerWidth - 8 - width);
+        if (8 + width > window.innerWidth - 8) {
+            // Still doesn't fit, we'll clamp it
+            el.style.right = '8px';
+        }
+    }
+    width = Math.min(left + width, window.innerWidth - 8) - left;
+
+    el.style.left = `${Math.round(left).toString()}px`;
+    el.style.top = `${Math.round(top).toString()}px`;
+    el.style.height = `${Math.round(height).toString()}px`;
+    el.style.width = `${Math.round(width).toString()}px`;
 }

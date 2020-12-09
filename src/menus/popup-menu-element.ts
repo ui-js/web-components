@@ -1,8 +1,5 @@
-import {
-    KeyboardModifiers,
-    MenuItemTemplate,
-    MENU_TEMPLATE,
-} from './menu-core';
+import { KeyboardModifiers } from '../common/events';
+import { MenuItemTemplate, MENU_TEMPLATE } from './menu-core';
 import { RootMenu } from './root-menu';
 
 export class UIPopupMenuElement extends HTMLElement {

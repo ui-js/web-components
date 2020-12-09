@@ -221,7 +221,9 @@ export class RootMenu extends Menu {
         } else if (event.type === 'contextmenu') {
             event.preventDefault();
             event.stopPropagation();
+            return;
         }
+        super.handleEvent(event);
     }
 
     private get scrim(): HTMLElement {
@@ -259,26 +261,23 @@ export class RootMenu extends Menu {
     }
 
     show(options?: {
-        clientX?: number;
-        clientY?: number;
+        location?: [x: number, y: number];
         parent?: Node; // Where the menu should attach
         keyboardModifiers?: KeyboardModifiers;
     }): boolean {
-        if (super.show({ ...options, parent: this.scrim })) {
-            // Record the opening time.
-            // If we receive a mouseup within a small delta of the open time stamp
-            // hold the menu open until it is dismissed, otherwise close it.
-            this._openTimestamp = Date.now();
-            this.state = 'open';
-
-            this.connectScrim(options?.parent);
-            // Note: any attempt at focusing before
-            // connecting the scrim would have been a no-op
-            // Focus now.
-            this.element.focus();
-            return true;
+        // Connect the scrim now, so that the menu can be measured and placed
+        this.connectScrim(options?.parent);
+        if (!super.show({ ...options, parent: this.scrim })) {
+            // There was nothing to show: remove the scrim
+            this.disconnectScrim();
+            return false;
         }
-        return false;
+        // Record the opening time.
+        // If we receive a mouseup within a small delta of the open time stamp
+        // hold the menu open until it is dismissed, otherwise close it.
+        this._openTimestamp = Date.now();
+        this.state = 'open';
+        return true;
     }
 
     hide(): void {

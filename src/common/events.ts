@@ -22,10 +22,10 @@ export class LongPressDetector {
         this.lastPoint = this.startPoint;
 
         this.timer = setTimeout(() => {
+            this.dispose();
             if (distance(this.lastPoint, this.startPoint) < 10) {
                 this.onLongPress();
             }
-            this.dispose();
         }, LongPressDetector.DELAY);
         ['pointermove', 'pointerup', 'pointercancel'].forEach((x) =>
             window.addEventListener(x, this, { passive: true })

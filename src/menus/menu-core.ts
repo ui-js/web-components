@@ -2,6 +2,7 @@ import {
     KeyboardModifiers,
     keyboardModifiersFromEvent,
 } from '../common/events';
+import { fitInViewport } from '../common/scrim';
 import { addPart, removePart, UIElement } from '../common/ui-element';
 import { UIMenuItemElement } from './menu-item-element';
 import { RootMenu } from './root-menu';
@@ -263,6 +264,17 @@ export class Menu {
         this.isSubmenuOpen = false;
     }
 
+    handleEvent(event: Event): void {
+        if (event.type === 'wheel' && this._element) {
+            const ev = event as WheelEvent;
+            // Scroll wheel: adjust scroll position
+            this._element.scrollBy(0, ev.deltaY);
+
+            event.preventDefault();
+            event.stopPropagation();
+        }
+    }
+
     get rootMenu(): RootMenu {
         return this.parentMenu?.rootMenu;
     }
@@ -278,16 +290,16 @@ export class Menu {
         // Save the current menu
         const elem = this._element;
         let saveCurrentItem: number;
-        let clientX: string;
-        let clientY: string;
+        let left: string;
+        let top: string;
         let parent: Node;
         if (elem) {
             // If there is a cached element for this menu,
             // remove it (but save its state)
             saveCurrentItem = this._menuItems.indexOf(this.activeMenuItem);
             parent = elem.parentNode;
-            clientX = elem.style.left;
-            clientY = elem.style.top;
+            left = elem.style.left;
+            top = elem.style.top;
             parent?.removeChild(elem);
             this._element = null;
         }
@@ -321,9 +333,11 @@ export class Menu {
             // restore it and its state
             parent?.appendChild(this.element);
 
-            this.element.style.position = 'absolute';
-            this.element.style.top = clientY;
-            this.element.style.left = clientX;
+            fitInViewport(this.element, {
+                location: [parseInt(left), parseInt(top)],
+                verticalPos: 'bottom',
+                horizontalPos: 'right',
+            });
 
             this.activeMenuItem = this.menuItems[saveCurrentItem];
             if (this.activeMenuItem?.submenu) {
@@ -448,6 +462,7 @@ export class Menu {
         });
         return Menu._collator;
     }
+
     findMenuItem(text: string): MenuItem {
         const candidates = this._menuItems.filter(
             (x) => x.type !== 'separator' && !x.hidden && !x.disabled
@@ -483,6 +498,7 @@ export class Menu {
         ul.setAttribute('tabindex', '-1');
         ul.setAttribute('role', 'menu');
         ul.setAttribute('aria-orientation', 'vertical');
+        ul.addEventListener('wheel', this);
 
         // Remove all items
         ul.textContent = '';
@@ -502,23 +518,24 @@ export class Menu {
      * @param parent: where the menu should be attached
      * @return false if no menu to show
      */
-    show(options?: {
+    show(options: {
         parent: Node;
-        clientX?: number;
-        clientY?: number;
+        location?: [x: number, y: number];
+        alternateLocation?: [x: number, y: number];
         keyboardModifiers?: KeyboardModifiers;
     }): boolean {
         this.updateMenu(options?.keyboardModifiers);
         if (this.menuItems.filter((x) => !x.hidden).length === 0) return false;
 
-        options?.parent?.appendChild(this.element);
+        options.parent.appendChild(this.element);
 
-        if (isFinite(options?.clientX) && isFinite(options?.clientY)) {
-            this.element.style.position = 'absolute';
-            this.element.style.top =
-                Number(Math.round(options.clientY)).toString() + 'px';
-            this.element.style.left =
-                Number(Math.round(options.clientX)).toString() + 'px';
+        if (options.location) {
+            fitInViewport(this.element, {
+                location: options.location,
+                alternateLocation: options.alternateLocation,
+                verticalPos: 'bottom',
+                horizontalPos: 'right',
+            });
         }
 
         this.element.focus();
@@ -771,30 +788,11 @@ export abstract class MenuItem {
             );
             return;
         }
-        const maxWidth = window.document.documentElement.clientWidth;
-        const maxHeight = window.document.documentElement.clientHeight;
         const bounds = this.element.getBoundingClientRect();
-
-        // Update the items of the submenu so we can lay it out and measure it
-        this.submenu.updateMenu(kbd);
-        this.element.appendChild(this.submenu.element);
-        const submenuBounds = this.submenu.element.getBoundingClientRect();
-        this.element.removeChild(this.submenu.element);
-
-        let clientX = bounds.width;
-        let clientY = -4;
-        if (bounds.right + submenuBounds.width > maxWidth) {
-            // Need to adjust horizontally
-            clientX = -submenuBounds.width;
-        }
-        if (bounds.top - 4 + submenuBounds.height > maxHeight) {
-            // Need to adjust vertically
-            clientY = -4 - (submenuBounds.height - (maxHeight - bounds.top));
-        }
         this.submenu.show({
-            clientX,
-            clientY,
-            parent: this.element,
+            location: [bounds.right, bounds.top - 4],
+            alternateLocation: [bounds.left, bounds.top - 4],
+            parent: this.parentMenu.rootMenu.element.parentNode,
             keyboardModifiers: kbd,
         });
     }
