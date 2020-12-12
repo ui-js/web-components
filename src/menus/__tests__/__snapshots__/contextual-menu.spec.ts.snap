@@ -10,16 +10,16 @@ exports[`contextual-menu renders a simple contextual menu with markup 1`] = `
 :host {
     display: none;
     color-scheme: light dark;
-    --active-label-color: #fff;
-    --label-color: #121212;
-    --menu-bg: #e2e2e2;
-    --active-bg: #5898ff;
-    --active-bg-dimmed: #c5c5c5;
     -webkit-user-select: none;  /* Important: Safari iOS doesn't respect user-select */
     user-select: none;
     cursor: default;
     -webkit-touch-callout: none;
     -webkit-tap-highlight-color: rgba(0 0 0 0);
+    --active-label-color: #fff;
+    --label-color: #121212;
+    --menu-bg: #e2e2e2;
+    --active-bg: #5898ff;
+    --active-bg-dimmed: #c5c5c5;
 }
 :host([hidden]) {
     display: none;
@@ -49,6 +49,7 @@ exports[`contextual-menu renders a simple contextual menu with markup 1`] = `
 ul.menu-container {
     position: absolute;
     width: auto;
+    height: auto;
     z-index: 10000;
     border-radius: 8px;
     background: var(--menu-bg);
@@ -69,7 +70,7 @@ ul.menu-container {
     outline: none;
     opacity: 1;
 }
-ul > li {
+ul.menu-container > li {
     display: flex;
     flex-flow: row;
     align-items: center;
@@ -92,7 +93,7 @@ ul > li {
     line-height: 16px;
     letter-spacing: 0.007em;
 }
-ul > li > .label {
+ul.menu-container > li > .label {
     appearance: none;
     background: none;
     outline: none;
@@ -104,10 +105,10 @@ ul > li > .label {
     white-space: nowrap;
 }
 
-ul > li > .label.indent {
+ul.menu-container > li > .label.indent {
     margin-left: 12px;
 }
-ul > li[role=separator] {
+ul.menu-container > li[role=separator] {
     border-bottom: 1px solid #c7c7c7;
     border-radius: 0;
     padding: 0;
@@ -117,22 +118,22 @@ ul > li[role=separator] {
     margin-bottom: 5px;
     width: calc(100% - 30px);
 }
-ul > li[aria-disabled=true] {
+ul.menu-container > li[aria-disabled=true] {
     opacity: .5;
 }
 
-ul > li.active {
+ul.menu-container > li.active {
     background: var(--active-bg);
     background: -apple-system-control-accent;
     color: var(--active-label-color);
 }
 
-ul > li.active.is-submenu-open {
+ul.menu-container > li.active.is-submenu-open {
     background: var(--active-bg-dimmed);
     color: inherit;
 }
 
-ul > li[aria-haspopup=true]>.label {
+ul.menu-container > li[aria-haspopup=true]>.label {
      padding-right: 0;
 }
 
@@ -140,7 +141,7 @@ ul > li[aria-haspopup=true]>.label {
     margin-left: 24px;
     width: 10px;
     height: 10px;
-    padding-bottom: 4px;
+    margin-bottom: 4px;
 }
 .checkmark {
     margin-right: -11px;
@@ -150,7 +151,7 @@ ul > li[aria-haspopup=true]>.label {
     height: 16px;
 }
 
-ul > li[aria-haspopup=true].active::after {
+ul.menu-container > li[aria-haspopup=true].active::after {
     color: white;
 }
 @media (prefers-color-scheme: dark) {
@@ -175,16 +176,16 @@ exports[`contextual-menu renders a simple contextual menu with markup 2`] = `
 :host {
     display: none;
     color-scheme: light dark;
-    --active-label-color: #fff;
-    --label-color: #121212;
-    --menu-bg: #e2e2e2;
-    --active-bg: #5898ff;
-    --active-bg-dimmed: #c5c5c5;
     -webkit-user-select: none;  /* Important: Safari iOS doesn't respect user-select */
     user-select: none;
     cursor: default;
     -webkit-touch-callout: none;
     -webkit-tap-highlight-color: rgba(0 0 0 0);
+    --active-label-color: #fff;
+    --label-color: #121212;
+    --menu-bg: #e2e2e2;
+    --active-bg: #5898ff;
+    --active-bg-dimmed: #c5c5c5;
 }
 :host([hidden]) {
     display: none;
@@ -214,6 +215,7 @@ exports[`contextual-menu renders a simple contextual menu with markup 2`] = `
 ul.menu-container {
     position: absolute;
     width: auto;
+    height: auto;
     z-index: 10000;
     border-radius: 8px;
     background: var(--menu-bg);
@@ -234,7 +236,7 @@ ul.menu-container {
     outline: none;
     opacity: 1;
 }
-ul > li {
+ul.menu-container > li {
     display: flex;
     flex-flow: row;
     align-items: center;
@@ -257,7 +259,7 @@ ul > li {
     line-height: 16px;
     letter-spacing: 0.007em;
 }
-ul > li > .label {
+ul.menu-container > li > .label {
     appearance: none;
     background: none;
     outline: none;
@@ -269,10 +271,10 @@ ul > li > .label {
     white-space: nowrap;
 }
 
-ul > li > .label.indent {
+ul.menu-container > li > .label.indent {
     margin-left: 12px;
 }
-ul > li[role=separator] {
+ul.menu-container > li[role=separator] {
     border-bottom: 1px solid #c7c7c7;
     border-radius: 0;
     padding: 0;
@@ -282,22 +284,22 @@ ul > li[role=separator] {
     margin-bottom: 5px;
     width: calc(100% - 30px);
 }
-ul > li[aria-disabled=true] {
+ul.menu-container > li[aria-disabled=true] {
     opacity: .5;
 }
 
-ul > li.active {
+ul.menu-container > li.active {
     background: var(--active-bg);
     background: -apple-system-control-accent;
     color: var(--active-label-color);
 }
 
-ul > li.active.is-submenu-open {
+ul.menu-container > li.active.is-submenu-open {
     background: var(--active-bg-dimmed);
     color: inherit;
 }
 
-ul > li[aria-haspopup=true]>.label {
+ul.menu-container > li[aria-haspopup=true]>.label {
      padding-right: 0;
 }
 
@@ -305,7 +307,7 @@ ul > li[aria-haspopup=true]>.label {
     margin-left: 24px;
     width: 10px;
     height: 10px;
-    padding-bottom: 4px;
+    margin-bottom: 4px;
 }
 .checkmark {
     margin-right: -11px;
@@ -315,7 +317,7 @@ ul > li[aria-haspopup=true]>.label {
     height: 16px;
 }
 
-ul > li[aria-haspopup=true].active::after {
+ul.menu-container > li[aria-haspopup=true].active::after {
     color: white;
 }
 @media (prefers-color-scheme: dark) {
