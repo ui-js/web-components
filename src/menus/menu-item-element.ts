@@ -1,4 +1,5 @@
 import { UIElement } from '../common/ui-element';
+import { MenuItem } from './menu-base';
 
 const MENU_ITEM_STYLE = document.createElement('template');
 MENU_ITEM_STYLE.innerHTML = `<style>
@@ -36,46 +37,11 @@ MENU_ITEM_STYLE.innerHTML = `<style>
 :host([disabled]) {
     opacity:  .5;
 }
-:host[aria-disabled=true] {
-    opacity: .5;
-}
-:host(:focus), :host(:focus-within) {
-    outline: Highlight auto 1px;    /* For Firefox */
-    outline: -webkit-focus-ring-color auto 1px;
-}
-
-:host.indent {
-    margin-left: 12px;
-}
-
-:host[role=separator] {
-    border-bottom: 1px solid #c7c7c7;
-    border-radius: 0;
-    padding: 0;
-    margin-left: 15px;
-    margin-right: 15px;
-    padding-top: 5px;
-    margin-bottom: 5px;
-}
 
 :host([active]) {
-    background: var(--active-bg);
-    background: -apple-system-control-accent;
     color: var(--active-label-color);
 }
 
-:host([active]).is-submenu-open {
-    background: var(--active-bg-dimmed);
-    color: inherit;
-}
-
-:host[aria-haspopup=true]>.label {
-     padding-right: 0;
-}
-
-:host[aria-haspopup=true].active::after {
-    color: white;
-}
 @media (prefers-color-scheme: dark) {
     :host {
         --label-color: #fff;
@@ -88,21 +54,21 @@ MENU_ITEM_STYLE.innerHTML = `<style>
 const MENU_ITEM_TEMPLATE = document.createElement('template');
 MENU_ITEM_TEMPLATE.innerHTML = '<slot></slot>';
 
+/**
+ * Each `UIMenuItemElement` is wrapped inside a `<li>` tag.
+ * A `UIMenuItemElement` represents the label part of a menu item.
+ * Other elements such as the checkmark and the submenu indicator
+ * are rendered by the menu container.
+ */
 export class UIMenuItemElement extends UIElement {
-    static get observedAttributes(): string[] {
-        return ['type'];
-    }
+    // The _menuItem is the 'model' corresponding to this element.
+    private _menuItem: MenuItem;
 
-    get type(): string {
-        return this.hasAttribute('type') ? this.getAttribute('type') : 'normal';
+    set menuItem(value: MenuItem) {
+        this._menuItem = value;
     }
-
-    set type(val: string) {
-        if (val) {
-            this.setAttribute('type', val);
-        } else {
-            this.removeAttribute('type');
-        }
+    get menuItem(): MenuItem {
+        return this._menuItem;
     }
     constructor() {
         super({ template: MENU_ITEM_TEMPLATE, style: MENU_ITEM_STYLE });

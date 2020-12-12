@@ -115,7 +115,11 @@ export class Scrim {
     }
 
     handleEvent(ev: Event): void {
-        if (ev.type === 'click' && this.dismissOnClick) {
+        if (
+            ev.target === this._element &&
+            ev.type === 'click' &&
+            this.dismissOnClick
+        ) {
             this.hide();
             ev.preventDefault();
             ev.stopPropagation();
@@ -215,15 +219,14 @@ export function fitInViewport(
     const dir = getDir(el) ?? 'ltr';
 
     // Reset any location, so we can get the natural width/height
+    el.style.display = 'block';
     el.style.position = 'absolute';
-    el.style.overflow = 'hidden';
     el.style.left = 'auto';
     el.style.top = 'auto';
     el.style.right = 'auto';
     el.style.bottom = 'auto';
     el.style.height = 'auto';
     el.style.width = 'auto';
-    el.style.display = 'block';
 
     const elementBounds = el.getBoundingClientRect();
 

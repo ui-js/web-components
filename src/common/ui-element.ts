@@ -170,6 +170,12 @@ export class UIElement extends HTMLElement {
     }
 }
 
+/**
+ * An element can have multiple 'parts', which function as a kind of
+ * parallel classList.
+ *
+ * Add a part name to the part list of this element.
+ */
 export function addPart(el: HTMLElement, part: string): void {
     if (!el) return;
     const current = el.getAttribute('part') ?? '';
@@ -178,6 +184,9 @@ export function addPart(el: HTMLElement, part: string): void {
     }
 }
 
+/**
+ * Remove a part name from the part list of this element.
+ */
 export function removePart(el: HTMLElement, part: string): void {
     if (!el) return;
     const current = el.getAttribute('part') ?? '';

@@ -5,7 +5,8 @@ import {
     LongPressDetector,
 } from '../common/events';
 import { UIElement } from '../common/ui-element';
-import { MenuItemTemplate, MENU_TEMPLATE, MENU_STYLE } from './menu-core';
+import { MenuItemTemplate } from './menu-core';
+import { MENU_TEMPLATE, MENU_STYLE } from './menu-templates';
 import { RootMenu } from './root-menu';
 
 /**
@@ -27,6 +28,34 @@ import { RootMenu } from './root-menu';
  * - dark-theme aware
  * - responsive (the menu and submenus will attempt to avoid being displayed
  *   outside of the viewport boundary)
+ *
+ * Principles of Operation
+ *
+ * The content of a menu (menu items and submenus) is represented by a 'model',
+ * an instance of the Menu class.
+ * The model is created from:
+ * - argument to the UIContextMenuElement constructor
+ * - setting the `menuItems` property
+ * - a `<script>` tag containing a JSON description of menu items
+ * - a set of child `<ui-menu-item>` elements.
+ *
+ * A menu can also have a `<style>` tag, which is applied to style the menu
+ * once it is open.
+ *
+ * The `<ui-context-menu>` and its child elements are kept hidden.
+ *
+ * When the menu is invoked (with `show()`) a scrim element is created
+ * and added as a child of the `<ui-context-menu>`, and a new `<ul>` element
+ * is created and attached as a child of the scrim.
+ *
+ * A set of `<li>` element is added as children of the `<ul>` element, one
+ * for each visible menu item, whether this menu item was specified in
+ * JSON or with a `<menu-item>` element. The `<li>` element are made of
+ * the following components:
+ * - a checkmark (optional)
+ * - a text label (as a text node, if specified from JSON or as a cloned
+ * `UIMenuItemElement` if specified from the `<ui-menu-item>`)
+ * - a submenu indicator
  *
  */
 export class UIContextMenuElement extends UIElement {

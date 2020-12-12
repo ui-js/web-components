@@ -4,174 +4,9 @@ import {
 } from '../common/events';
 import { fitInViewport } from '../common/scrim';
 import { addPart, removePart, UIElement } from '../common/ui-element';
+import { MenuInterface, MenuItem, RootMenuInterface } from './menu-base';
 import { UIMenuItemElement } from './menu-item-element';
-import { RootMenu } from './root-menu';
-
-export const MENU_TEMPLATE = document.createElement('template');
-MENU_TEMPLATE.innerHTML = `<ul></ul><slot></slot>`;
-export const MENU_STYLE = document.createElement('template');
-MENU_STYLE.innerHTML = `<style>
-*,
-::before,
-::after {
-    box-sizing: border-box;
-}
-:host {
-    display: none;
-    color-scheme: light dark;
-    --active-label-color: #fff;
-    --label-color: #121212;
-    --menu-bg: #e2e2e2;
-    --active-bg: #5898ff;
-    --active-bg-dimmed: #c5c5c5;
-    -webkit-user-select: none;  /* Important: Safari iOS doesn't respect user-select */
-    user-select: none;
-    cursor: default;
-    -webkit-touch-callout: none;
-    -webkit-tap-highlight-color: rgba(0 0 0 0);
-}
-:host([hidden]) {
-    display: none;
-}
-:host([disabled]) {
-    pointer-events: none;
-    opacity:  .5;
-}
-:host(:focus), :host(:focus-within) {
-    outline: Highlight auto 1px;    /* For Firefox */
-    outline: -webkit-focus-ring-color auto 1px;
-}
-:host div.scrim {
-    position: fixed;
-    contain: content;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 9999;
-    outline: none;
-    background: transparent;
-}
-:host slot {
-    display: none;
-}
-ul.menu-container {
-    position: absolute;
-    width: auto;
-    z-index: 10000;
-    border-radius: 8px;
-    background: var(--menu-bg);
-    box-shadow: 0 0 2px rgba(0, 0, 0, .5), 0 0 20px rgba(0, 0, 0, .2);
-
-    list-style: none;
-    padding: 6px 0 6px 0;
-    margin: 0;
-    user-select: none;
-    cursor: default;
-
-    color: var(--label-color);
-    font-weight: normal;
-    font-style: normal;
-    text-shadow: none;
-    text-transform: none;
-    letter-spacing: 0;
-    outline: none;
-    opacity: 1;
-}
-ul > li {
-    display: flex;
-    flex-flow: row;
-    align-items: center;
-    padding: 1px 7px 1px 7px;
-    margin-top: 0;
-    margin-left: 6px;
-    margin-right: 6px;
-    border-radius: 4px;
-    white-space: nowrap;
-    position: relative;
-    outline: none;
-    fill: currentColor;
-    user-select: none;
-    cursor: default;
-    text-align: left;
-    color: inherit;
-
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    font-size: 13px;
-    line-height: 16px;
-    letter-spacing: 0.007em;
-}
-ul > li > .label {
-    appearance: none;
-    background: none;
-    outline: none;
-    width: 100%;
-    margin: 0;
-    padding: 1px 2px 1px 1px;
-    overflow: visible;
-    border: 1px solid transparent;
-    white-space: nowrap;
-}
-
-ul > li > .label.indent {
-    margin-left: 12px;
-}
-ul > li[role=separator] {
-    border-bottom: 1px solid #c7c7c7;
-    border-radius: 0;
-    padding: 0;
-    margin-left: 15px;
-    margin-right: 15px;
-    padding-top: 5px;
-    margin-bottom: 5px;
-    width: calc(100% - 30px);
-}
-ul > li[aria-disabled=true] {
-    opacity: .5;
-}
-
-ul > li.active {
-    background: var(--active-bg);
-    background: -apple-system-control-accent;
-    color: var(--active-label-color);
-}
-
-ul > li.active.is-submenu-open {
-    background: var(--active-bg-dimmed);
-    color: inherit;
-}
-
-ul > li[aria-haspopup=true]>.label {
-     padding-right: 0;
-}
-
-.right-chevron {
-    margin-left: 24px;
-    width: 10px;
-    height: 10px;
-    padding-bottom: 4px;
-}
-.checkmark {
-    margin-right: -11px;
-    margin-left: -4px;
-    margin-top : 2px;
-    width: 16px;
-    height: 16px;
-}
-
-ul > li[aria-haspopup=true].active::after {
-    color: white;
-}
-@media (prefers-color-scheme: dark) {
-    :host {
-        --label-color: #fff;
-        --active-label-color: #000;
-        --menu-bg: #525252;
-        --active-bg: #5898ff;
-        --active-bg-dimmed: #5c5c5;
-    }
-}
-</style>`;
+import { UISubmenuElement } from './submenu-element';
 
 export type MenuItemTemplate = {
     onSelect?: (ev: CustomEvent<MenuSelectEvent>) => void;
@@ -224,15 +59,23 @@ export type MenuItemTemplate = {
 };
 
 /**
- * An instance of `Menu` is a collection of menu items, including submenus.
+ * An instance of `Menu` is a model of a collection of menu items, including
+ * submenus.
+ *
+ *
  */
-export class Menu {
-    parentMenu: Menu;
+export class Menu implements MenuInterface {
+    parentMenu: MenuInterface;
 
     protected _element: HTMLElement;
     protected _menuItems: MenuItem[];
     private _activeMenuItem: MenuItem;
     isSubmenuOpen: boolean; // If true, _activeMenuItem.submenu_ is open
+
+    /**
+     * The Element from which menu items will be used as template (optional)
+     */
+    menuHost: Element;
 
     hasCheckbox: boolean; // If true, has at least one checkbox menu item
     hasRadio: boolean; // If true, has at least one radio menu item
@@ -248,12 +91,24 @@ export class Menu {
      * Optional, an HTML element to be used as the container for this menu.
      * Used when this maps to a custom element with a <ul> in its template.
      */
-    private _assignedContainer: HTMLElement;
+    protected _assignedContainer: HTMLElement;
 
+    /**
+     * - host: if the menu is inside an element, the host is this element.
+     * This is where a set of <ui-menu-item> elements will be read from.
+     * - assignedContainer: the element into which the menu items will be
+     * inserted. A <ul>. Could be in a custom element. If none is provided,
+     * a new <ul> is created.
+     * - wrapper: an element that wraps the container. This elements
+     * gets attached to the scrim for display. If none is provided,
+     * the container is used directly. Pass the custom element when
+     * a custom element wrapper is used (e.g. for <ui-submenu>)
+     */
     constructor(
         menuItems?: MenuItemTemplate[],
         options?: {
-            parentMenu?: Menu;
+            parentMenu?: MenuInterface;
+            host?: Element;
             assignedContainer?: HTMLElement;
         }
     ) {
@@ -262,6 +117,8 @@ export class Menu {
 
         this._menuItemsTemplate = menuItems;
         this.isSubmenuOpen = false;
+
+        this.menuHost = options?.host;
     }
 
     handleEvent(event: Event): void {
@@ -275,18 +132,22 @@ export class Menu {
         }
     }
 
-    get rootMenu(): RootMenu {
+    get rootMenu(): RootMenuInterface {
         return this.parentMenu?.rootMenu;
     }
 
-    get host(): Element {
-        return this.rootMenu.host;
+    dispatchEvent(ev: Event): boolean {
+        return this.rootMenu.dispatchEvent(ev);
     }
 
+    /**
+     * Update the 'model' of this menu (i.e. list of menu items) based
+     * on:
+     * - the state of the keyboard, for programmatically specified items
+     * - the content of the JSON and elements inside the host element
+     * (if there is one)
+     */
     updateMenu(keyboardModifiers?: KeyboardModifiers): void {
-        // The state of the keyboard modifiers may have changed and the menu
-        // is dynamic: recalculate the menu
-
         // Save the current menu
         const elem = this._element;
         let saveCurrentItem: number;
@@ -307,14 +168,15 @@ export class Menu {
         this._menuItems = [];
         this.hasCheckbox = false;
         this.hasRadio = false;
-        if (!this._menuItemsTemplate) return;
-        this._menuItemsTemplate.forEach((x) =>
-            this.appendMenuItem(x, keyboardModifiers)
-        );
+        if (this._menuItemsTemplate) {
+            this._menuItemsTemplate.forEach((x) =>
+                this.appendMenuItem(x, keyboardModifiers)
+            );
+        }
 
         // Add menu-item-elements
-        if (this.host?.shadowRoot) {
-            const itemElements = this.host.shadowRoot
+        if (this.menuHost?.shadowRoot) {
+            const itemElements = this.menuHost.shadowRoot
                 .querySelector<HTMLSlotElement>('slot')
                 .assignedElements()
                 .filter<UIMenuItemElement>(
@@ -489,10 +351,8 @@ export class Menu {
         return result;
     }
 
-    get element(): HTMLElement {
-        if (this._element) return this._element;
-
-        const ul = this._assignedContainer ?? document.createElement('ul');
+    makeElement(container?: HTMLElement): HTMLElement {
+        const ul = container ?? document.createElement('ul');
         ul.classList.add('menu-container');
         ul.setAttribute('part', 'menu-container');
         ul.setAttribute('tabindex', '-1');
@@ -510,7 +370,18 @@ export class Menu {
         });
         ul.querySelector('li:first-of-type')?.setAttribute('tabindex', '0');
 
-        this._element = ul;
+        return ul;
+    }
+
+    /**
+     * Construct (or return a cached version) of an element representing
+     * the items in this menu (model -> view)
+     */
+    get element(): HTMLElement {
+        if (!this._element) {
+            this._element = this.makeElement(this._assignedContainer);
+        }
+
         return this._element;
     }
 
@@ -570,10 +441,10 @@ export class Menu {
      * To open a submenu call openSubmenu() on the item with the submenu
      * or show() on the submenu.
      */
-    set openSubmenu(submenu: Menu) {
+    set openSubmenu(submenu: MenuInterface) {
         const expanded = submenu !== null;
         // We're closing a submenu
-        if (this.activeMenuItem?.type === 'submenu') {
+        if (this.activeMenuItem?.submenu) {
             this.activeMenuItem.element?.setAttribute(
                 'aria-expanded',
                 expanded.toString()
@@ -584,7 +455,7 @@ export class Menu {
 
     appendMenuItem(
         menuItem: MenuItemTemplate | UIMenuItemElement,
-        keyboardModifiers: KeyboardModifiers
+        keyboardModifiers?: KeyboardModifiers
     ): void {
         this.insertMenuItem(-1, menuItem, keyboardModifiers);
     }
@@ -592,7 +463,7 @@ export class Menu {
     insertMenuItem(
         pos: number,
         menuItem: MenuItemTemplate | UIMenuItemElement,
-        keyboardModifiers: KeyboardModifiers
+        keyboardModifiers?: KeyboardModifiers
     ): void {
         if (pos < 0) pos = Math.max(0, this._menuItems.length - 1);
 
@@ -671,172 +542,17 @@ declare global {
     }
 }
 
-/**
- * Base class to represent a menu item.
- * There are two subclasses:
- * - MenuItemFromTemplate for menu items created from a JSON template
- * - MenuItemFromElement for menu items created for a UIMenuItemElement
- */
-export abstract class MenuItem {
-    parentMenu: Menu;
-    submenu?: Menu;
-
-    constructor(parentMenu: Menu) {
-        this.parentMenu = parentMenu;
-    }
-
-    handleEvent(event: Event): void {
-        if (event.type === 'pointerenter') {
-            const ev = event as PointerEvent;
-            this.parentMenu.rootMenu.cancelDelayedOperation();
-            // If there is a submenu open, and the mouse is moving in the
-            // triangle formed from the current mouse location and the two
-            // adjacent corners of the open menu, schedule setting the new
-            // active menuitem to later
-            if (
-                this.parentMenu.isSubmenuOpen &&
-                this.parentMenu.activeMenuItem?.movingTowardSubmenu(ev)
-            ) {
-                this.parentMenu.rootMenu.scheduleOperation(() => {
-                    this.parentMenu.activeMenuItem = this;
-                    if (this.submenu) {
-                        this.openSubmenu(keyboardModifiersFromEvent(ev));
-                    }
-                });
-            } else {
-                this.parentMenu.activeMenuItem = this;
-                if (this.submenu) {
-                    this.openSubmenu(keyboardModifiersFromEvent(ev), {
-                        withDelay: true,
-                    });
-                }
-            }
-        } else if (event.type === 'pointerleave') {
-            if (this.parentMenu.rootMenu.activeMenu === this.parentMenu) {
-                this.parentMenu.activeMenuItem = null;
-            }
-        } else if (event.type === 'pointerup') {
-            // when modal, the items are activated on click,
-            // so ignore mouseup
-            if (this.parentMenu.rootMenu.state !== 'modal') {
-                this.select(keyboardModifiersFromEvent(event));
-            }
-            event.stopPropagation();
-            event.preventDefault();
-        }
-    }
-
-    abstract get type():
-        | 'normal'
-        | 'separator'
-        | 'submenu'
-        | 'checkbox'
-        | 'radio';
-
-    abstract get active(): boolean;
-    abstract get hidden(): boolean;
-    abstract get disabled(): boolean;
-    abstract get label(): string;
-    abstract set active(val: boolean);
-
-    // Notify the owner that a menu item has been selected
-    abstract dispatchSelect(kbd?: KeyboardModifiers): void;
-
-    abstract get element(): HTMLElement;
-
-    get host(): Element {
-        return this.parentMenu.host;
-    }
-
-    /**
-     * Called when a menu item is selected:
-     * - either dismiss the menu and execute the command
-     * - or display the submenu
-     */
-    select(kbd?: KeyboardModifiers): void {
-        this.parentMenu.rootMenu.cancelDelayedOperation();
-
-        if (this.submenu) {
-            this.openSubmenu(kbd);
-            return;
-        }
-
-        // Make the item blink, then execute the command
-        setTimeout(() => {
-            this.active = false;
-            setTimeout(() => {
-                this.active = true;
-                setTimeout(() => {
-                    this.parentMenu.rootMenu.hide();
-                    setTimeout(() => this.dispatchSelect(kbd), 120);
-                }, 120);
-            }, 120);
-        }, 120);
-    }
-
-    /**
-     * Open the submenu of this menu item, with a delay if options.delay
-     * This delay improves targeting of submenus with the mouse.
-     */
-    openSubmenu(
-        kbd: KeyboardModifiers,
-        options?: { withDelay: boolean }
-    ): void {
-        if (options?.withDelay ?? false) {
-            this.parentMenu.rootMenu.scheduleOperation(() =>
-                this.openSubmenu(kbd)
-            );
-            return;
-        }
-        const bounds = this.element.getBoundingClientRect();
-        this.submenu.show({
-            location: [bounds.right, bounds.top - 4],
-            alternateLocation: [bounds.left, bounds.top - 4],
-            parent: this.parentMenu.rootMenu.element.parentNode,
-            keyboardModifiers: kbd,
-        });
-    }
-
-    movingTowardSubmenu(ev: PointerEvent): boolean {
-        const lastEv = this.parentMenu.rootMenu.lastMoveEvent;
-        if (!lastEv) return false;
-
-        const deltaT = ev.timeStamp - lastEv.timeStamp;
-        if (deltaT > 500) return false;
-
-        const deltaX = ev.clientX - lastEv.clientX;
-
-        // Moving too slow?
-        const s = speed(deltaX, lastEv.clientY - ev.clientY, deltaT);
-        if (s <= 0.2) return false;
-
-        // Moving horizontally towards the submenu?
-        let position: 'left' | 'right' = 'right';
-        if (this.submenu.element) {
-            const submenuBounds = this.submenu.element.getBoundingClientRect();
-
-            const bounds = this.element.getBoundingClientRect();
-            if (submenuBounds.left < bounds.left + bounds.width / 2) {
-                position = 'left';
-            }
-        }
-
-        return position === 'right' ? deltaX > 0 : deltaX < 0;
-    }
-}
-
 export class MenuItemFromTemplate extends MenuItem {
     _type: 'normal' | 'separator' | 'submenu' | 'checkbox' | 'radio';
     _label?: string;
     _disabled: boolean;
     _hidden: boolean;
 
-    className?: string;
     ariaLabel?: string;
     ariaDetails?: string;
     checked?: boolean;
     onSelect?: (ev: CustomEvent<MenuSelectEvent>) => void;
-    submenu?: Menu;
+    submenu?: MenuInterface;
     id?: string;
     data?: any;
 
@@ -844,7 +560,7 @@ export class MenuItemFromTemplate extends MenuItem {
 
     constructor(
         template: MenuItemTemplate,
-        parentMenu: Menu,
+        parentMenu: MenuInterface,
         options?: {
             keyboardModifiers?: KeyboardModifiers;
         }
@@ -872,7 +588,6 @@ export class MenuItemFromTemplate extends MenuItem {
             ) ?? false;
 
         this.id = template.id;
-        this.className = template.className;
         this._label = evalToString(template, template.label, options);
         this.ariaLabel = evalToString(template, template.ariaLabel, options);
         this.ariaDetails = evalToString(
@@ -935,9 +650,6 @@ export class MenuItemFromTemplate extends MenuItem {
         }
         const li = document.createElement('li');
         li.setAttribute('part', 'menu-item');
-        if (this.className) {
-            li.className = this.className;
-        }
         li.setAttribute('tabindex', '-1');
         if (this.type === 'radio') {
             li.setAttribute('role', 'menuitemradio');
@@ -950,7 +662,7 @@ export class MenuItemFromTemplate extends MenuItem {
             li.setAttribute('aria-checked', 'true');
             li.appendChild(CHECKMARK_TEMPLATE.content.cloneNode(true));
         }
-        if (this.type === 'submenu') {
+        if (this.submenu) {
             li.setAttribute('aria-haspopup', 'true');
             li.setAttribute('aria-expanded', 'false');
         }
@@ -1014,7 +726,7 @@ export class MenuItemFromTemplate extends MenuItem {
         if (typeof this.onSelect === 'function') {
             this.onSelect(ev);
         } else {
-            this.host.dispatchEvent(ev);
+            this.parentMenu.dispatchEvent(ev);
         }
     }
 }
@@ -1028,15 +740,37 @@ export class MenuItemFromElement extends MenuItem {
     // The <li> is cached
     _cachedElement: HTMLElement;
 
-    constructor(element: UIElement, parentMenu: Menu) {
+    constructor(element: UIMenuItemElement, parentMenu: MenuInterface) {
         super(parentMenu);
         this.parentMenu = parentMenu;
         this._sourceElement = element;
+        element.menuItem = this;
+
+        // Read a <ui-submenu> element if there is one
+        if (element.shadowRoot) {
+            const submenuElements = element.shadowRoot
+                .querySelector<HTMLSlotElement>('slot')
+                .assignedElements()
+                .filter<UISubmenuElement>(
+                    (x): x is UISubmenuElement => x.tagName === 'UI-SUBMENU'
+                );
+            console.assert(
+                submenuElements?.length <= 1,
+                'Expected no more than one submenu'
+            );
+            if (submenuElements && submenuElements.length >= 1) {
+                this.submenu = new Submenu({
+                    host: submenuElements[0],
+                    parentMenu: parentMenu,
+                });
+            }
+        }
     }
 
     get type(): 'normal' | 'separator' | 'submenu' | 'checkbox' | 'radio' {
         if (this.separator) return 'separator';
-        // @todo: submenu, radio, checkbox
+        if (this.submenu) return 'submenu';
+        // @todo:  radio, checkbox
         return 'normal';
     }
     get label(): string {
@@ -1128,7 +862,7 @@ export class MenuItemFromElement extends MenuItem {
             li.setAttribute('aria-checked', 'true');
             li.appendChild(CHECKMARK_TEMPLATE.content.cloneNode(true));
         }
-        if (this.type === 'submenu') {
+        if (this.submenu) {
             li.setAttribute('aria-haspopup', 'true');
             li.setAttribute('aria-expanded', 'false');
         }
@@ -1151,6 +885,9 @@ export class MenuItemFromElement extends MenuItem {
             true
         ) as UIElement;
         li.appendChild(this._sourceElementClone);
+        if (this.submenu) {
+            li.appendChild(CHEVRON_RIGHT_TEMPLATE.content.cloneNode(true));
+        }
 
         return li;
     }
@@ -1173,11 +910,45 @@ export class MenuItemFromElement extends MenuItem {
         if (typeof this._sourceElement.onselect === 'function') {
             this._sourceElement.onselect(ev);
         } else {
-            this.host.dispatchEvent(ev);
+            this.parentMenu.dispatchEvent(ev);
         }
     }
 }
 
-function speed(dx: number, dy: number, dt: number): number {
-    return Math.sqrt(dx * dx + dy * dy) / dt;
+export class Submenu extends Menu {
+    source: UISubmenuElement;
+    constructor(options: {
+        host: UISubmenuElement;
+        parentMenu: MenuInterface;
+    }) {
+        super([], {
+            parentMenu: options.parentMenu,
+            host: options.host,
+        });
+        this.source = options.host;
+    }
+    get element(): HTMLElement {
+        if (this._element) return this._element;
+
+        const clone = this.source.cloneNode(true) as UISubmenuElement;
+        // clone.style.display = 'block';
+        clone.importStyle();
+        this.makeElement(clone.shadowRoot.querySelector('ul'));
+        this._element = clone;
+        return clone;
+    }
+    show(options?: {
+        location?: [x: number, y: number];
+        keyboardModifiers?: KeyboardModifiers;
+    }): boolean {
+        return super.show({
+            ...options,
+            parent: this.parentMenu.rootMenu.scrim,
+        });
+    }
+    /**
+     */
+    hide(): void {
+        super.hide();
+    }
 }

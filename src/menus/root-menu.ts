@@ -6,8 +6,9 @@ import {
 } from '../common/events';
 import { Scrim } from '../common/scrim';
 import { Menu, MenuItemTemplate } from './menu-core';
+import { MenuInterface, RootMenuInterface } from './menu-base';
 
-export class RootMenu extends Menu {
+export class RootMenu extends Menu implements RootMenuInterface {
     lastMoveEvent: PointerEvent;
 
     private typingBufferResetTimer: number;
@@ -16,10 +17,6 @@ export class RootMenu extends Menu {
     private _openTimestamp: number;
     private currentKeyboardModifiers: KeyboardModifiers;
     private hysteresisTimer: number;
-    /**
-     * The host is used to dispatch events from
-     */
-    private _host: Element;
     /**
      * - 'closed': the menu is not visible
      * - 'open': the menu is visible as long as the mouse button is pressed
@@ -34,26 +31,25 @@ export class RootMenu extends Menu {
     isDynamic: boolean;
 
     /**
-     * If an `options.element` is provided, the root menu is
+     * If an `options.assignedElement` is provided, the root menu is
      * attached to that element (the element will be modified
      * to display the menu). Use this when using a popup menu.
      * In this mode, call `show()` and `hide()` to control the
      * display of the menu.
      *
-     * Otherwise, if `options.element` is undefined, use `.element` to get
-     * back an element representing the menu, and attach this element where
-     * appropriate. Use this when displaying the menu inline.
      */
     constructor(
         menuItems?: MenuItemTemplate[],
         options?: {
-            root?: Node;
             host?: Element;
-            keyboardModifiers?: KeyboardModifiers;
             assignedElement?: HTMLElement;
+            keyboardModifiers?: KeyboardModifiers;
         }
     ) {
-        super(menuItems, { assignedContainer: options?.assignedElement });
+        super(menuItems, {
+            host: options?.host,
+            assignedContainer: options?.assignedElement,
+        });
         this.isDynamic = menuItems.some(isDynamic);
         this.currentKeyboardModifiers = options?.keyboardModifiers;
         this.typingBuffer = '';
@@ -63,20 +59,14 @@ export class RootMenu extends Menu {
             dismissOnClick: true,
             onHide: () => this.hide(),
         });
-
-        this._host = options?.host;
-    }
-
-    get host(): Element {
-        return this._host;
     }
 
     /**
      * The currently active menu: could be the root menu or a submenu
      */
-    get activeMenu(): Menu {
+    get activeMenu(): MenuInterface {
         // eslint-disable-next-line @typescript-eslint/no-this-alias
-        let result: Menu = this;
+        let result: MenuInterface = this;
         while (result.isSubmenuOpen) {
             result = result.activeMenuItem.submenu;
         }
@@ -97,6 +87,7 @@ export class RootMenu extends Menu {
             }
         }
     }
+
     handleKeydownEvent(ev: KeyboardEvent): void {
         if (ev.key === 'Tab') {
             // Close and bubble
@@ -226,7 +217,11 @@ export class RootMenu extends Menu {
         super.handleEvent(event);
     }
 
-    private get scrim(): HTMLElement {
+    dispatchEvent(ev: Event): boolean {
+        return this.menuHost.dispatchEvent(ev);
+    }
+
+    get scrim(): Element {
         return this._scrim.element;
     }
 
