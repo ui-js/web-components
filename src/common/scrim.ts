@@ -1,3 +1,5 @@
+import { getComputedDir } from './ui-element';
+
 export class Scrim {
     private _element: HTMLElement;
 
@@ -145,12 +147,6 @@ function deepActiveElement(): HTMLOrSVGElement | null {
     return (a as unknown) as HTMLOrSVGElement;
 }
 
-function getDir(el: HTMLElement): 'ltr' | 'rtl' {
-    if (el.dir) return el.dir as 'ltr' | 'rtl';
-    if (el.parentElement) return getDir(el.parentElement);
-    return 'ltr';
-}
-
 /**
  * Calculate the effective position (width or height) given a starting pos,
  * a placement (left, top, middle, etc...) and dir (ltr/rtl).
@@ -216,7 +212,7 @@ export function fitInViewport(
         maxHeight?: number;
     }
 ): void {
-    const dir = getDir(el) ?? 'ltr';
+    const dir = getComputedDir(el) ?? 'ltr';
 
     // Reset any location, so we can get the natural width/height
     el.style.display = 'block';

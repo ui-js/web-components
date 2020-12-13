@@ -257,6 +257,7 @@ export class RootMenu extends Menu implements RootMenuInterface {
 
     show(options?: {
         location?: [x: number, y: number];
+        alternateLocation?: [x: number, y: number];
         parent?: Node; // Where the menu should attach
         keyboardModifiers?: KeyboardModifiers;
     }): boolean {

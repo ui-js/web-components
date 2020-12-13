@@ -39,7 +39,7 @@ export class UIElement extends HTMLElement {
         Object.defineProperty(this, propName, {
             enumerable: true,
             get(): string {
-                return this.getAttribute(attrName) ?? '';
+                return this.getAttribute(attrName);
             },
             set(value: string) {
                 this.setAttribute(attrName, value);
@@ -88,6 +88,10 @@ export class UIElement extends HTMLElement {
                 this.reflectStringAttribute(x[0], x[1]);
             }
         });
+    }
+
+    get computedDir(): 'rtl' | 'ltr' {
+        return getComputedDir(this);
     }
 
     /**
@@ -196,4 +200,40 @@ export function removePart(el: HTMLElement, part: string): void {
             current.replace(new RegExp('\\bs*' + part + 's*\\b', 'g'), '')
         );
     }
+}
+
+export function getComputedDir(el: HTMLElement): 'ltr' | 'rtl' {
+    if (el.dir && el.dir !== 'auto') return el.dir as 'ltr' | 'rtl';
+    if (el.parentElement) return getComputedDir(el.parentElement);
+    return 'ltr';
+}
+
+export function getOppositeEdge(
+    bounds: DOMRectReadOnly,
+    position: 'leading' | 'trailing' | 'left' | 'end',
+    direction: 'ltr' | 'rtl'
+): number {
+    if (
+        position === 'left' ||
+        (position === 'leading' && direction === 'ltr') ||
+        (position === 'trailing' && direction === 'rtl')
+    ) {
+        return bounds.right;
+    }
+    return bounds.left;
+}
+
+export function getEdge(
+    bounds: DOMRectReadOnly,
+    position: 'leading' | 'trailing' | 'left' | 'end',
+    direction: 'ltr' | 'rtl'
+): number {
+    if (
+        position === 'left' ||
+        (position === 'leading' && direction === 'ltr') ||
+        (position === 'trailing' && direction === 'rtl')
+    ) {
+        return bounds.left;
+    }
+    return bounds.right;
 }

@@ -1,65 +1,173 @@
-import { KeyboardModifiers } from '../common/events';
-import { MenuItemTemplate, MENU_TEMPLATE } from './menu-core';
+import { getEdge, getOppositeEdge, UIElement } from '../common/ui-element';
+import {
+    keyboardModifiersFromEvent,
+    KeyboardModifiers,
+} from '../common/events';
+import { MenuItemTemplate } from './menu-core';
 import { RootMenu } from './root-menu';
+import { MENU_TEMPLATE, MENU_STYLE } from './menu-templates';
 
-export class UIPopupMenuElement extends HTMLElement {
+export class UIPopupMenuElement extends UIElement {
     private rootMenu: RootMenu;
-    constructor(inMenuItems?: MenuItemTemplate[]) {
-        super();
+    private templateMenuItems: MenuItemTemplate[];
+    position: 'leading' | 'trailing' | 'left' | 'end';
 
-        this.attachShadow({ mode: 'open' });
-        this.shadowRoot.appendChild(MENU_TEMPLATE.content.cloneNode(true));
-
-        // Inline menu items (as a JSON structure in the markup)
-        let jsonMenuItems = [];
-        try {
-            const json = this.shadowRoot
-                .querySelector<HTMLSlotElement>('slot:not([name])')
-                .assignedElements()
-                .filter((x) => x['type'] === 'application/json')
-                .map((x) => x.textContent)
-                .join('');
-            if (json) {
-                jsonMenuItems = JSON.parse(json);
-                if (!Array.isArray(jsonMenuItems)) {
-                    jsonMenuItems = [];
-                }
-            }
-        } catch (e) {
-            console.log(e);
-        }
-
-        this.rootMenu = new RootMenu(
-            [...(inMenuItems ?? []), ...jsonMenuItems],
-            {
-                host: this.shadowRoot.host,
-                root: this.shadowRoot,
-            }
-        );
+    constructor(menuItems?: MenuItemTemplate[]) {
+        super({
+            template: MENU_TEMPLATE,
+            style: MENU_STYLE,
+        });
+        this.templateMenuItems = menuItems ?? [];
+        this.reflectStringAttribute('position');
     }
 
+    set menuItems(menuItems: MenuItemTemplate[]) {
+        this.templateMenuItems = menuItems;
+        if (this.rootMenu) {
+            this.rootMenu.menuItemTemplates = menuItems;
+        }
+    }
+    get menuItems(): MenuItemTemplate[] {
+        return this.templateMenuItems;
+    }
+
+    /**
+     * @internal
+     */
+    handleEvent(event: Event): void {
+        if (event.type === 'keydown' && event.target === this.parentElement) {
+            const evt = event as KeyboardEvent;
+            if (evt.code === 'Return' || evt.code === 'Enter') {
+                const bounds = this.parentElement?.getBoundingClientRect();
+                if (bounds) {
+                    this.show({
+                        keyboardModifiers: keyboardModifiersFromEvent(evt),
+                    });
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+            }
+        } else if (event.type === 'pointerdown') {
+            console.assert(
+                this.shadowRoot.host.parentNode === this.parentElement
+            );
+            if (event.target === this.shadowRoot.host.parentNode) {
+                this.show({
+                    keyboardModifiers: keyboardModifiersFromEvent(event),
+                });
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        }
+    }
+    /**
+     * Custom elements lifecycle hooks
+     * @internal
+     */
+    connectedCallback(): void {
+        super.connectedCallback();
+        // Listen for contextual menu in the parent
+        const parent = this.parentNode;
+        parent.addEventListener('keydown', this);
+        parent.addEventListener('pointerdown', this);
+    }
+    /**
+     * Custom elements lifecycle hooks
+     * @internal
+     */
+    disconnectedCallback(): void {
+        super.disconnectedCallback();
+        const parent = this.parentNode;
+        if (parent) {
+            parent.removeEventListener('keydown', this);
+            parent.removeEventListener('pointerdown', this);
+        }
+    }
+    /**
+     * @internal
+     */
     focus(): void {
         super.focus();
-        if (this.rootMenu.state !== 'closed') {
+        if (this.rootMenu?.state !== 'closed') {
             if (this.rootMenu.activeMenuItem) {
                 this.rootMenu.activeMenuItem.element.focus();
-            } else if (this.rootMenu.firstMenuItem) {
-                this.rootMenu.activeMenuItem = this.rootMenu.firstMenuItem;
             } else {
                 this.rootMenu.element.focus();
             }
         }
     }
-
+    /**
+     * Display the menu at the specified location.
+     * If provided, the `keyboardModifiers` option can change what commands
+     * are visible, enabled, or what their label is.
+     *
+     * The contextual menu is shown automatically when the appropriate UI gesture
+     * is performed by the user (right-click, shift+F10, etc...). This method
+     * only needs to be called to trigger the menu manually (for example to
+     * trigger it on click of an item).
+     */
     show(options?: { keyboardModifiers?: KeyboardModifiers }): void {
-        if (!this.hasAttribute('tabindex')) this.setAttribute('tabindex', '-1');
+        if (!this.rootMenu) {
+            // Import inline (in the component) style sheet
+            this.importStyle();
 
-        this.rootMenu.show(options);
-        this.focus();
+            // Inline menu items (as a JSON structure in a <script> tag
+            // in the markup)
+            let jsonMenuItems = this.json;
+            if (!Array.isArray(jsonMenuItems)) jsonMenuItems = [];
+            this.rootMenu = new RootMenu(
+                [...this.templateMenuItems, ...jsonMenuItems],
+                {
+                    host: this.shadowRoot.host,
+                    assignedElement: this.shadowRoot.querySelector<HTMLElement>(
+                        'ul'
+                    ),
+                }
+            );
+        }
+        this.style.display = 'inline-block';
+        const bounds = this.parentElement?.getBoundingClientRect();
+        if (
+            this.rootMenu.show({
+                ...options,
+                location: [
+                    getEdge(
+                        bounds,
+                        this.position ?? 'leading',
+                        this.computedDir
+                    ),
+                    bounds.bottom,
+                ],
+                alternateLocation: [
+                    getOppositeEdge(
+                        bounds,
+                        this.position ?? 'leading',
+                        this.computedDir
+                    ),
+                    bounds.bottom,
+                ],
+                parent: this.shadowRoot,
+            })
+        ) {
+            if (!this.hasAttribute('tabindex')) {
+                this.setAttribute('tabindex', '-1');
+            }
+            this.focus();
+        } else {
+            this.style.display = 'none';
+        }
     }
-
+    /**
+     * Hide the menu.
+     *
+     * The visibility of the menu is typically controlled by the user
+     * interaction: the menu is automatically hidden if the user release the
+     * mouse button, or after having selected a command. This is a manual
+     * override that should be very rarely needed.
+     */
     hide(): void {
-        this.rootMenu.hide();
+        this.rootMenu?.hide();
+        this.style.display = 'none';
     }
 }
 

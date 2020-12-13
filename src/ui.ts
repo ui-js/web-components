@@ -1,1 +1,5 @@
-export { UIContextMenuElement, UISubmenuElement } from './menus/menus';
+export {
+    UIContextMenuElement,
+    UIPopupMenuElement,
+    UISubmenuElement,
+} from './menus/menus';
