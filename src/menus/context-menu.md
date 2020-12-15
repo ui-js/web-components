@@ -1,9 +1,6 @@
 ---
 permalink: /guides/context-menu/
 title: Context Menu
-read_time: false
-sidebar:
-    - nav: 'mathlive'
 ---
 
 ## Overview
@@ -294,4 +291,5 @@ appearance of menu items.
 
 ## See Also
 
--   [Context Menu](<./docs/menus/#("context-menu-element"%3Amodule).(UIContextMenuElement%3Aclass)>)
+-   [Popup Menu](./guides/popup-menu/)
+-   [Context Menu API](<./docs/menus/#("context-menu-element"%3Amodule).(UIContextMenuElement%3Aclass)>)

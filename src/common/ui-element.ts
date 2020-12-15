@@ -67,6 +67,44 @@ export class UIElement extends HTMLElement {
         });
     }
 
+    /**
+     * Declare that an attribute should be reflected as a property
+     */
+    reflectEnumAttribute(
+        attrName: string,
+        attrValues: string[],
+        propName = attrName
+    ): void {
+        // Attributes should be all lower case, kebab-case.
+        console.assert(attrName.toLowerCase() === attrName);
+        Object.defineProperty(this, propName, {
+            enumerable: true,
+            get(): string {
+                let value: string;
+                attrValues.forEach((x) => {
+                    if (this.hasAttribute(x)) {
+                        console.assert(
+                            typeof value === 'undefined',
+                            `inconsistent ${attrName} attributes on ${this}`
+                        );
+                        value = x;
+                    }
+                });
+                if (typeof value === 'string') return value;
+                return this.getAttribute(attrName);
+            },
+            set(value: string) {
+                this.setAttribute(attrName, value);
+                this.setAttribute(value, '');
+                attrValues.forEach((x) => {
+                    if (x !== value) {
+                        this.removeAttribute(x);
+                    }
+                });
+            },
+        });
+    }
+
     reflectBooleanAttributes(
         attrNames: (string | [attrName: string, propName: string])[]
     ): void {

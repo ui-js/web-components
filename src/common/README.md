@@ -80,3 +80,27 @@ be used as an attribute.
 <ui-shape type=circle></ui-shape>
 <ui-shape circle></ui-shape>
 ```
+
+## Layout Direction
+
+The ui-js components support both left-to-right and right-to-left layouts.
+The appropriate layout is determined based on the flow of content on the page
+and on the UI layout conventions for that flow direction.
+
+The direction of the flow of content is determined by a combination of
+HTML and CSS properties such as the `dir` HTML attribute, the `direction`
+CSS property and the `writing-mode` property.
+
+When the writing mode is vertical, the UI layout direction is left-to-right,
+otherwise the UI layout direction matches the `direction`.
+
+The following directional terms are frequently used as attribute values:
+
+-   `top` and `bottom`: physical direction relative to the page
+-   `left` and `right`: physical direction relative to the page
+-   `leading`: `left` when the UI layout is left-to-right, `right` otherwise
+-   `trailing`: `right` when the UI layout is right-to-left, `left` otherwise
+
+Note that the values `start` and `end` used by CSS can reflect either a
+vertical or horizontal direction, while `leading` and `trailing` always
+refer to a horizontal direction.

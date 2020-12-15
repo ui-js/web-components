@@ -69,8 +69,9 @@ echo -e "\033[2K\033[80D\033[32m ✔ \033[0m Declaration files built"
 # echo -e "\033[2K\033[80D\033[32m ✔ \033[0m Static assest copied"
 
 # Build CSS
-# printf "\033[32m ● \033[0m Building static CSS"
-# echo -e "\033[2K\033[80D\033[32m ✔ \033[0m Static CSS built"
+printf "\033[32m ● \033[0m Building static CSS"
+npx lessc src/css/ui.less dist/ui.css
+echo -e "\033[2K\033[80D\033[32m ✔ \033[0m Static CSS built"
 
 if [ "$BUILD" = "watch" ]; then
     # Do dev build and watch
@@ -85,9 +86,9 @@ else
 
     if [ "$BUILD" = "production" ]; then
         # Optimize CSS
-        # printf "\033[32m ● \033[0m Optimizing CSS"
-        # npx postcss dist/*.css -d dist
-        # echo -e "\033[2K\033[80D\033[32m ✔ \033[0m CSS Optimized"
+        printf "\033[32m ● \033[0m Optimizing CSS"
+        npx postcss dist/*.css -d dist
+        echo -e "\033[2K\033[80D\033[32m ✔ \033[0m CSS Optimized"
 
         # Stamp the SDK version number
         printf "\033[32m ● \033[0m Stamping output files"
