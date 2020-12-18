@@ -64,13 +64,13 @@ The supported parts are:
 
 <div class="card">
 <a class="section-link" href="/guides/context-menu/" target="_self" rel="follow" aria-hidden="true"
-    tabindex="-1">&nbsp;</a>
+    tabindex="-1">
 <div class="icon-secondary">
     <i class="fa-4x fal fa-file-alt"></i>
 </div>
 <div class='copy'>
     <h3>Context Menu</h3>
     <p>A menu invoked with a right-click or a long press.</p>
-    <a href="/docs/contributing-code">Learn more<i class=" fas fa-chevron-right navigation"></i></a>
+    <a href="/guides/context-menu">Learn more<i class=" fas fa-chevron-right navigation"></i></a>
 </div>
-</div>
+&nbsp;</a></div>

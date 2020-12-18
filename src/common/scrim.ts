@@ -3,8 +3,8 @@ import { getComputedDir } from './ui-element';
 export class Scrim {
     private _element: HTMLElement;
 
-    private dismissOnClick: boolean;
-    private onHide: () => void;
+    private preventOverlayClose: boolean;
+    private onClose: () => void;
 
     private savedOverflow: string;
     private savedMarginRight: string;
@@ -16,17 +16,20 @@ export class Scrim {
     private translucent: boolean;
 
     /**
-     * - If `options.dismissOnClick` is true, the scrim is dismissed if the
+     * - If `options.preventOverlayClose` is false, the scrim is closed if the
      * user clicks on the scrim. That's the behavior for menus, for example.
-     * - `onHide()` is called when the scrim is being hidden
+     * When you need a fully modal situation until the user has made an
+     * explicit choice (validating cookie usage, for example), set
+     * `preventOverlayClose` to true.
+     * - `onClose()` is called when the scrim is being closed
      * -
      */
     constructor(options?: {
         translucent?: boolean;
-        dismissOnClick?: boolean;
-        onHide?: () => void;
+        preventOverlayClose?: boolean;
+        onClose?: () => void;
     }) {
-        this.dismissOnClick = options?.dismissOnClick ?? false;
+        this.preventOverlayClose = options?.preventOverlayClose ?? false;
         this.translucent = options?.translucent ?? false;
 
         this.state = 'closed';
@@ -47,7 +50,7 @@ export class Scrim {
         el.style.zIndex = '9999';
         el.style.outline = 'none';
         if (this.translucent) {
-            el.style.background = 'rgba(255 255 255 .2)';
+            el.style.background = 'rgba(255, 255, 255, .2)';
             el.style['backdropFilter'] = 'contrast(40%)';
         } else {
             el.style.background = 'transparent';
@@ -56,7 +59,7 @@ export class Scrim {
         return el;
     }
 
-    show(options: { root?: Node; child?: HTMLElement }): void {
+    open(options: { root?: Node; child?: HTMLElement }): void {
         if (this.state !== 'closed') return;
 
         this.state = 'opening';
@@ -91,11 +94,11 @@ export class Scrim {
         this.state = 'open';
     }
 
-    hide(): void {
+    close(): void {
         if (this.state !== 'open') return;
         this.state = 'closing';
 
-        if (typeof this.onHide === 'function') this.onHide();
+        if (typeof this.onClose === 'function') this.onClose();
 
         const el = this.element;
         el.removeEventListener('click', this);
@@ -117,24 +120,22 @@ export class Scrim {
     }
 
     handleEvent(ev: Event): void {
-        if (
-            ev.target === this._element &&
-            ev.type === 'click' &&
-            this.dismissOnClick
-        ) {
-            this.hide();
-            ev.preventDefault();
-            ev.stopPropagation();
-            return;
-        } else if (
-            ev.target === document &&
-            (ev.type === 'touchmove' || ev.type === 'scroll')
-        ) {
-            // This is an attempt at scrolling on a touch-device
-            this.hide();
-            ev.preventDefault();
-            ev.stopPropagation();
-            return;
+        if (!this.preventOverlayClose) {
+            if (ev.target === this._element && ev.type === 'click') {
+                this.close();
+                ev.preventDefault();
+                ev.stopPropagation();
+                return;
+            } else if (
+                ev.target === document &&
+                (ev.type === 'touchmove' || ev.type === 'scroll')
+            ) {
+                // This is an attempt at scrolling on a touch-device
+                this.close();
+                ev.preventDefault();
+                ev.stopPropagation();
+                return;
+            }
         }
     }
 }

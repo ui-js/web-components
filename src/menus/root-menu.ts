@@ -55,10 +55,7 @@ export class RootMenu extends Menu implements RootMenuInterface {
         this.typingBuffer = '';
         this.state = 'closed';
 
-        this._scrim = new Scrim({
-            dismissOnClick: true,
-            onHide: () => this.hide(),
-        });
+        this._scrim = new Scrim({ onClose: () => this.hide() });
     }
 
     /**
@@ -235,7 +232,7 @@ export class RootMenu extends Menu implements RootMenuInterface {
         scrim.addEventListener('keyup', this);
         scrim.addEventListener('pointermove', this);
 
-        this._scrim.show({ root });
+        this._scrim.open({ root });
     }
 
     private disconnectScrim(): void {
@@ -247,7 +244,7 @@ export class RootMenu extends Menu implements RootMenuInterface {
         scrim.removeEventListener('keydown', this);
         scrim.removeEventListener('keyup', this);
         scrim.removeEventListener('pointermove', this);
-        this._scrim.hide();
+        this._scrim.close();
     }
 
     get rootMenu(): RootMenu {

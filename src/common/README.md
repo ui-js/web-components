@@ -1,5 +1,5 @@
 ---
-permalink: /essentials
+permalink: /essentials/
 title: Essentials
 ---
 
@@ -60,24 +60,31 @@ presence or absence is relevant.
 
 <ui-shape disabled></ui-shape>
 <!-- "disabled" is true -->
+
 <ui-shape disabled="true"></ui-shape>
 <!-- "disabled" is true -->
+
 <ui-shape disabled="foo"></ui-shape>
 <!-- "disabled" is true -->
+
 <ui-shape disabled="false"></ui-shape>
 <!-- !! "disabled" is true -->
->
 ```
 
+### Attribute Names
+
 The name of an attribute is the kebab-case version of the property name.
-So for example the property` backgroundColor` would be reflected as the attribute `background-color`.
+So for example the property `backgroundColor` would be reflected as the attribute `background-color`.
+
+### Attribute Shorthand
 
 When a property is a string enumeration (i.e. its value is one of a
 finite set of strings), as a shorthand the value of the property can
 be used as an attribute.
 
-```
-<ui-shape type=circle></ui-shape>
+```html
+<ui-shape type="circle"></ui-shape>
+
 <ui-shape circle></ui-shape>
 ```
 

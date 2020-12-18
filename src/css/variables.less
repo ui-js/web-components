@@ -1,7 +1,60 @@
 @import 'globals.less';
 
-:host {
-    --ui-system-font: @system-font;
+/**
+ * The design tokens are named with this grammar:
+ *
+ * <element (opt)>-<variant (opt)>-<property>-<state>
+ *
+ * <element> is optional, but for example 'button'
+ * <variant> is optional, but for example 'primary', 'minimal', 'critical'
+ * <property> is 
+ *  - 'bgcolor'
+ *  - 'background' background image, gradient, etc...
+ *  - 'color': text, stroke, border or fill color
+ *  - 'font-family'
+ *  - 'font-size'
+ *  - 'font-weight',
+ * <state> is:
+ * - 'hover'
+ * - 'down' when a pointer is pressed on an element
+ * - 'active' when an element is "on"/"selected"
+ * - 'active-hover' when an active element 
+ * - 'active-down' when an active element 
+ * - 'disabled'
+ * - 'error'
+
+
+ * - `spacing`
+ * - `sizing`
+ * - `breakpoints`
+ * - `elevation`
+ */
+
+:root {
+    --ui-font-family: @system-font;
+    --ui-text-font-family: @system-font;
+    --ui-text-color: #333;
+    --ui-mono-font-family: mono;
+
     --ui-primary-color: #0066ce;
     --ui-secondary-color: #666;
+    --ui-critical-color: #e22;
+
+    --ui-primary-color-darker: #003366;
+    --ui-secondary-color-darker: #222;
+    --ui-critical-color-darker: #c33;
+
+    --ui-primary-color-lighter: #0077ff;
+    --ui-secondary-color-lighter: #888;
+    --ui-critical-color-lighter: #f44;
 }
+
+// primary-background-color
+// primary-text-color
+
+// primary-color-background
+// primary-color-text
+// primary-color-inverted
+// primary-color-contrast
+// primary-color-darker
+// primary-color-lighther

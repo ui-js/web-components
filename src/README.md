@@ -25,7 +25,7 @@ Learn more about some [Essential Principles](./essentials) when using ui-js.
 
 ## Basic Input
 
--   Button
+-   [Button](./guides/button)
 -   Checkbox
 -   Dropdown
 -   Textfield
@@ -34,7 +34,8 @@ Learn more about some [Essential Principles](./essentials) when using ui-js.
 
 ## Commands, Menus and Navigation
 
--   [Context Menu](./guides/menus)
+-   [Context Menu](./guides/context-menu)
+-   [Popup Menu](./guides/popup-menu)
 -   NavBar
 
 ## Lists

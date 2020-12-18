@@ -1,19 +1,215 @@
 @import 'globals.less';
 
+@button-bgcolor--hover: #f0f0f0;
+@button-bgcolor: transparent;
+@button-bordercolor: #ddd;
+
+@button-critical-bgcolor: var(--ui-critical-color);
+@button-critical-bgcolor--hover: var(--ui-critical-color-darker);
+@button-critical-color: white;
+
+@button-primary-bgcolor: var(--ui-primary-color);
+@button-primary-bgcolor--hover: var(--ui-primary-color-darker);
+@button-primary-color: white;
+
+@button-secondary-bgcolor: var(--ui-secondary-color);
+@button-secondary-bgcolor--hover: var(--ui-secondary-color-darker);
+@button-secondary-color: white;
+
 .ui-button {
-    -webkit-appearance: none;
-    padding: 8px;
-    border-radius: 4px;
-    border: 1px solid #ddd;
-    font-family: var(--ui-system-font);
-    font-size: 13px;
-    line-height: 16px;
-    background: transparent;
-}
-.ui-button:hover {
-    background: #f0f0f0;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: top;
+
+    // Remove the margin in Safari & Firefox
+    margin: 0;
+
+    min-height: 1em;
+    height: auto;
+
+    box-sizing: border-box;
+    padding: 0.5em 1em;
+
+    -webkit-appearance: button;
+
+    border-radius: @button-border-radius;
+    border: 0.5px solid @button-bordercolor;
+    box-shadow: @button-shadow;
+    box-sizing: border-box;
+
+    background: @button-bgcolor;
+    color: var(--ui-text-color);
+
+    outline: none;
+
+    font-family: var(--ui-font-family);
+    letter-spacing: -0.022em;
+    font-size: 16px;
+    line-height: 20px;
+    font-style: normal;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+    text-overflow: ellipsis;
+    text-transform: none;
+    overflow-wrap: break-word;
+    overflow: hidden;
+    white-space: nowrap;
+
+    touch-action: manipulation;
+
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none; // Prevent touch-scrolling
+    cursor: pointer;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
+
+    // &:focus {
+    //     outline: none;
+    // }
+    &::-moz-focus-inner {
+        border: 0;
+        border-style: none;
+        padding: 0;
+    }
+    &.disabled,
+    &:disabled {
+        cursor: default;
+        opacity: @disabled-opacity;
+    }
+    &:after {
+        border-radius: @button-border-radius + @button-focus-ring-gap;
+        content: '';
+        display: block;
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: 0;
+        margin: -@button-focus-ring-gap;
+    }
+    &:focus-ring {
+        &:after {
+            margin: -2 * @button-focus-ring-gap;
+        }
+    }
+    &:hover:enabled:not(.disabled) {
+        background: @button-bgcolor--hover;
+    }
+
+    transition: all 0.12s ease-in-out;
+
+    &:active {
+        transform: scale(@down-state-scale);
+    }
+
+    &.minimal {
+        border: none;
+        box-shadow: none;
+    }
 }
 
-.ui-button:active {
-    background: #e0e0e0;
+//
+// Variants
+//
+
+.ui-button.primary {
+    background: @button-primary-bgcolor;
+    color: @button-primary-color;
+    border-color: var(--ui-primary-color-darker);
+    &:hover:enabled:not(.disabled) {
+        background: @button-primary-bgcolor--hover;
+    }
+    &.minimal {
+        background: transparent;
+        color: var(--ui-primary-color);
+        &:hover:enabled:not(.disabled) {
+            background: @button-bgcolor--hover;
+        }
+    }
+}
+
+.ui-button.secondary {
+    background: @button-secondary-bgcolor;
+    color: @button-secondary-color;
+    border-color: var(--ui-secondary-color-darker);
+    &:hover:enabled:not(.disabled) {
+        background: @button-secondary-bgcolor--hover;
+    }
+    &.minimal {
+        background: transparent;
+        color: var(--ui-secondary-color);
+        &:hover:enabled:not(.disabled) {
+            background: @button-bgcolor--hover;
+        }
+    }
+}
+
+.ui-button.critical {
+    background: @button-critical-bgcolor;
+    color: @button-critical-color;
+    border-color: var(--ui-critical-color-darker);
+    &:hover:enabled:not(.disabled) {
+        background: @button-critical-bgcolor--hover;
+    }
+    &.minimal {
+        background: transparent;
+        color: var(--ui-critical-color);
+        &:hover:enabled:not(.disabled) {
+            background: @button-bgcolor--hover;
+        }
+    }
+}
+
+//
+// Sizes
+//
+
+.ui-button.xs,
+.ui-buttons.xs > .ui-button {
+    font-size: 12px;
+    line-height: 14px;
+    min-height: calc(12px + 8px);
+}
+.ui-button.sm,
+.ui-buttons.sm > .ui-button {
+    font-size: 14px;
+    line-height: 18px;
+    min-height: calc(18px + 8px);
+}
+.ui-button.md,
+.ui-buttons.md > .ui-button {
+    font-size: 16px;
+    line-height: 20px;
+    min-height: calc(20px + 8px);
+}
+.ui-button.lg,
+.ui-buttons.lg > .ui-button {
+    font-size: 18px;
+    line-height: 22px;
+    min-height: calc(22px + 8px);
+}
+.ui-button.xl,
+.ui-buttons.xl > .ui-button {
+    font-size: 24px;
+    line-height: 26px;
+    min-height: calc(26px + 8px);
+}
+
+//
+// Buttons
+//
+.ui-buttons {
+    display: inline-flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: baseline;
+    vertical-align: baseline;
+    font-size: 0;
+    margin: 8px 8px 0 0;
+    width: 100%;
 }

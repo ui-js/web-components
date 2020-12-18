@@ -12,6 +12,8 @@ export class UIPopupMenuElement extends UIElement {
     private templateMenuItems: MenuItemTemplate[];
     position: 'leading' | 'trailing' | 'left' | 'end';
 
+    private _savedTransform: string;
+
     constructor(menuItems?: MenuItemTemplate[]) {
         super({
             template: MENU_TEMPLATE,
@@ -38,14 +40,11 @@ export class UIPopupMenuElement extends UIElement {
         if (event.type === 'keydown' && event.target === this.parentElement) {
             const evt = event as KeyboardEvent;
             if (evt.code === 'Return' || evt.code === 'Enter') {
-                const bounds = this.parentElement?.getBoundingClientRect();
-                if (bounds) {
-                    this.show({
-                        keyboardModifiers: keyboardModifiersFromEvent(evt),
-                    });
-                    event.preventDefault();
-                    event.stopPropagation();
-                }
+                this.show({
+                    keyboardModifiers: keyboardModifiersFromEvent(evt),
+                });
+                event.preventDefault();
+                event.stopPropagation();
             }
         } else if (event.type === 'pointerdown') {
             console.assert(
@@ -107,6 +106,7 @@ export class UIPopupMenuElement extends UIElement {
      * trigger it on click of an item).
      */
     show(options?: { keyboardModifiers?: KeyboardModifiers }): void {
+        if (!this.parentElement) return;
         if (!this.rootMenu) {
             // Import inline (in the component) style sheet
             this.importStyle();
@@ -126,7 +126,20 @@ export class UIPopupMenuElement extends UIElement {
             );
         }
         this.style.display = 'inline-block';
-        const bounds = this.parentElement?.getBoundingClientRect();
+        // This is yucky...
+        // The 'fixed' display mode (used by the scrim to position itself over
+        // the viewport) becomes 'relative' when a transform is specified
+        // on a parent element in WebKit and Chromium.
+        // See https://stackoverflow.com/revisions/15256339/2
+        // So we have to remove any transform that might be present to prevent
+        // the scrim from being displayed incorrectly.
+        this._savedTransform = window.getComputedStyle(
+            this.parentElement
+        ).transform;
+        if (this._savedTransform !== 'none') {
+            this.parentElement.style.transform = 'none';
+        }
+        const bounds = this.parentElement.getBoundingClientRect();
         if (
             this.rootMenu.show({
                 ...options,
@@ -168,6 +181,9 @@ export class UIPopupMenuElement extends UIElement {
     hide(): void {
         this.rootMenu?.hide();
         this.style.display = 'none';
+        if (this._savedTransform !== 'none') {
+            this.parentElement.style.transform = this._savedTransform;
+        }
     }
 }
 

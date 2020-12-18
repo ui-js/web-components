@@ -21,7 +21,7 @@ Follow the [guidelines for menus](./guides/menus).
 ## <span>Setting up a Popup Menu with <code>&lt;ui-menu-item&gt;</code> elements</span>
 
 ```html playground
-<button class="menu-button">
+<button class="ui-button">
     Planets<ui-popup-menu>
         <ui-menu-item>Anacreon</ui-menu-item>
         <ui-menu-item>Aurora</ui-menu-item>
