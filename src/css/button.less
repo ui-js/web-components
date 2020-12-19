@@ -16,6 +16,21 @@
 @button-secondary-bgcolor--hover: var(--ui-secondary-color-darker);
 @button-secondary-color: white;
 
+// Mixin to define the background color on hover
+// 1. Only define it when the item is enabled
+// 2. Only define it if the device if hover-capable (avoid sticky hover on touch devices)
+// 3. Define the hover also for the active state (so that it's visible on touch devices)
+.hover-background(@bgcolor) {
+    &:active:enabled:not(.disabled) {
+        background: @bgcolor;
+    }
+    @media (hover: hover) {
+        &:hover:enabled:not(.disabled) {
+            background: @bgcolor;
+        }
+    }
+}
+
 .ui-button {
     position: relative;
     display: inline-flex;
@@ -97,9 +112,8 @@
             margin: -2 * @button-focus-ring-gap;
         }
     }
-    &:hover:enabled:not(.disabled) {
-        background: @button-bgcolor--hover;
-    }
+
+    .hover-background(@button-bgcolor--hover);
 
     transition: all 0.12s ease-in-out;
 
@@ -114,22 +128,19 @@
 }
 
 //
-// Variants
+// Variants: `primary`, `secondary` and `critical`
 //
 
 .ui-button.primary {
     background: @button-primary-bgcolor;
     color: @button-primary-color;
     border-color: var(--ui-primary-color-darker);
-    &:hover:enabled:not(.disabled) {
-        background: @button-primary-bgcolor--hover;
-    }
+    .hover-background(@button-primary-bgcolor--hover);
+
     &.minimal {
         background: transparent;
         color: var(--ui-primary-color);
-        &:hover:enabled:not(.disabled) {
-            background: @button-bgcolor--hover;
-        }
+        .hover-background(@button-bgcolor--hover);
     }
 }
 
@@ -137,15 +148,13 @@
     background: @button-secondary-bgcolor;
     color: @button-secondary-color;
     border-color: var(--ui-secondary-color-darker);
-    &:hover:enabled:not(.disabled) {
-        background: @button-secondary-bgcolor--hover;
-    }
+
+    .hover-background(@button-secondary-bgcolor--hover);
+
     &.minimal {
         background: transparent;
         color: var(--ui-secondary-color);
-        &:hover:enabled:not(.disabled) {
-            background: @button-bgcolor--hover;
-        }
+        .hover-background(@button-bgcolor--hover);
     }
 }
 
@@ -153,15 +162,11 @@
     background: @button-critical-bgcolor;
     color: @button-critical-color;
     border-color: var(--ui-critical-color-darker);
-    &:hover:enabled:not(.disabled) {
-        background: @button-critical-bgcolor--hover;
-    }
+    .hover-background(@button-critical-bgcolor--hover);
     &.minimal {
         background: transparent;
         color: var(--ui-critical-color);
-        &:hover:enabled:not(.disabled) {
-            background: @button-bgcolor--hover;
-        }
+        .hover-background(@button-bgcolor--hover);
     }
 }
 
