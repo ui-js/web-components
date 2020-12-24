@@ -10,7 +10,7 @@ element.
 
 ## Usage Guidelines
 
-Follow the [guidelines for menus](./guides/menus).
+Follow the [guidelines for menus](/guides/menus).
 
 ## Attributes
 

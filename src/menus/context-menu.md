@@ -34,7 +34,7 @@ independent of the selection, such as **Quit**, **New Window**, **Go Back**, etc
 are at the top of the menu.** Place destructive commands (**Delete**,
 **Move to Trash**, etc...) at the bottom of the menu.
 
-Follow the [other guidelines for menus](./guides/menus).
+Follow the [other guidelines for menus](/guides/menus).
 
 ## Attributes
 

@@ -1,6 +1,6 @@
 ---
-permalink: /essentials/
-title: Essentials
+permalink: /conventions/
+title: Conventions
 ---
 
 ## Javascript
