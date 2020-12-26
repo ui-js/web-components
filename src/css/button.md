@@ -60,6 +60,7 @@ separated from other buttons.
 buttons**.
 
 ```html playground
+<h3>Regular</h3>
 <div class="ui-buttons">
     <button class="ui-button">Default</button>
     <button class="ui-button primary">Primary</button>

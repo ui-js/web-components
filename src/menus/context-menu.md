@@ -59,7 +59,7 @@ Define the commands of the menu with `<ui-menu-item>` elements inside a
         <ui-menu-item>Red</ui-menu-item>
         <ui-menu-item>Green</ui-menu-item>
         <ui-menu-item>Blue</ui-menu-item>
-        <ui-menu-item separator></ui-menu-item>
+        <ui-menu-item divider></ui-menu-item>
         <ui-menu-item>White</ui-menu-item>
         <ui-menu-item>Gray</ui-menu-item>
         <ui-menu-item>Black</ui-menu-item>
@@ -82,7 +82,7 @@ to the `UIContextMenuElement` constructor when using Javascript.
                 { "label": "Bold" },
                 { "label": "Italic" },
                 { "label": "Underline" },
-                { "type": "separator" },
+                { "type": "divider" },
                 { "label": "Red" },
                 { "label": "Green" },
                 { "label": "Blue" },
@@ -126,7 +126,7 @@ const menu = new UIContextMenuElement([
         id: 'apply-underline',
         onSelect: (item) => console.log('onSelect hook:', item.id),
     },
-    { type: 'separator' },
+    { type: 'divider' },
     { label: 'Red', data: { color: '#ff0000' } },
     { label: 'Green', data: { color: '#00ff00' } },
     { label: 'Blue', data: { color: '#0000ff' } },
@@ -162,7 +162,7 @@ few commands as possible.
                         { "label": "600%" }
                     ]
                 },
-                { "type": "separator"},
+                { "type": "divider"},
                 { "label": "Bold" }, 
                 { "label": "Italic" }, 
                 { "label": "Underline" }
@@ -189,7 +189,7 @@ few commands as possible.
                 { "label": "Outline", 
                     "disabled": true
                 },
-                { "type": "separator" },
+                { "type": "divider" },
                 { "label": "Small" },
                 { "label": "Medium",
                     "checked": true 
@@ -279,7 +279,7 @@ appearance of menu items.
         <ui-menu-item style="background:#bd0865"></ui-menu-item>
         <ui-menu-item style="background:#ed40d0"></ui-menu-item>
         <ui-menu-item style="background:#ed7f5a"></ui-menu-item>
-        <ui-menu-item separator></ui-menu-item>
+        <ui-menu-item divider></ui-menu-item>
         <ui-menu-item style="background:#18cc48"></ui-menu-item>
         <ui-menu-item style="background:#6bed5a"></ui-menu-item>
         <ui-menu-item style="background:#327aad"></ui-menu-item>

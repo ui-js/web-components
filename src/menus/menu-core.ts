@@ -10,7 +10,7 @@ import { UISubmenuElement } from './submenu-element';
 
 export type MenuItemTemplate = {
     onSelect?: (ev: CustomEvent<MenuSelectEvent>) => void;
-    type?: 'normal' | 'separator' | 'submenu' | 'checkbox' | 'radio';
+    type?: 'normal' | 'divider' | 'submenu' | 'checkbox' | 'radio';
     className?: string;
     label?:
         | string
@@ -230,7 +230,7 @@ export class Menu implements MenuInterface {
         const menuItems = this.menuItems;
         while (!found && result <= menuItems.length - 1) {
             const item = menuItems[result];
-            found = item.type !== 'separator' && !item.hidden && !item.disabled;
+            found = item.type !== 'divider' && !item.hidden && !item.disabled;
             result += 1;
         }
 
@@ -242,7 +242,7 @@ export class Menu implements MenuInterface {
         let found = false;
         while (!found && result >= 0) {
             const item = this.menuItems[result];
-            found = item.type !== 'separator' && !item.hidden && !item.disabled;
+            found = item.type !== 'divider' && !item.hidden && !item.disabled;
             result -= 1;
         }
 
@@ -304,7 +304,7 @@ export class Menu implements MenuInterface {
         let result = this._menuItems.indexOf(this._activeMenuItem) + dir;
         while (!found && result >= first && result <= last) {
             const item = this._menuItems[result];
-            found = item.type !== 'separator' && !item.hidden && !item.disabled;
+            found = item.type !== 'divider' && !item.hidden && !item.disabled;
             result += dir;
         }
         return found
@@ -327,7 +327,7 @@ export class Menu implements MenuInterface {
 
     findMenuItem(text: string): MenuItem {
         const candidates = this._menuItems.filter(
-            (x) => x.type !== 'separator' && !x.hidden && !x.disabled
+            (x) => x.type !== 'divider' && !x.hidden && !x.disabled
         );
         if (candidates.length === 0) return null;
         const last =
@@ -543,7 +543,7 @@ declare global {
 }
 
 export class MenuItemFromTemplate extends MenuItem {
-    _type: 'normal' | 'separator' | 'submenu' | 'checkbox' | 'radio';
+    _type: 'normal' | 'divider' | 'submenu' | 'checkbox' | 'radio';
     _label?: string;
     _disabled: boolean;
     _hidden: boolean;
@@ -617,7 +617,7 @@ export class MenuItemFromTemplate extends MenuItem {
         }
     }
 
-    get type(): 'normal' | 'separator' | 'submenu' | 'checkbox' | 'radio' {
+    get type(): 'normal' | 'divider' | 'submenu' | 'checkbox' | 'radio' {
         return this._type;
     }
     get label(): string {
@@ -633,10 +633,10 @@ export class MenuItemFromTemplate extends MenuItem {
     private render(): HTMLElement | null {
         if (this.hidden) return null;
 
-        if (this.type === 'separator') {
+        if (this.type === 'divider') {
             const li = document.createElement('li');
-            li.setAttribute('part', 'menu-separator');
-            li.setAttribute('role', 'separator');
+            li.setAttribute('part', 'menu-divider');
+            li.setAttribute('role', 'divider');
             return li;
         }
 
@@ -767,8 +767,8 @@ export class MenuItemFromElement extends MenuItem {
         }
     }
 
-    get type(): 'normal' | 'separator' | 'submenu' | 'checkbox' | 'radio' {
-        if (this.separator) return 'separator';
+    get type(): 'normal' | 'divider' | 'submenu' | 'checkbox' | 'radio' {
+        if (this.divider) return 'divider';
         if (this.submenu) return 'submenu';
         // @todo:  radio, checkbox
         return 'normal';
@@ -810,14 +810,14 @@ export class MenuItemFromElement extends MenuItem {
             removePart(this._cachedElement, 'checked');
         }
     }
-    get separator(): boolean {
-        return this._sourceElement.hasAttribute('separator');
+    get divider(): boolean {
+        return this._sourceElement.hasAttribute('divider');
     }
-    set separator(value: boolean) {
+    set divider(value: boolean) {
         if (value) {
-            this._sourceElementClone?.setAttribute('separator', '');
+            this._sourceElementClone?.setAttribute('divider', '');
         } else {
-            this._sourceElementClone?.removeAttribute('separator');
+            this._sourceElementClone?.removeAttribute('divider');
         }
     }
     get active(): boolean {
@@ -841,10 +841,10 @@ export class MenuItemFromElement extends MenuItem {
     private render(): HTMLElement | null {
         if (this.hidden) return null;
 
-        if (this.separator) {
+        if (this.divider) {
             const li = document.createElement('li');
-            li.setAttribute('part', 'menu-separator');
-            li.setAttribute('role', 'separator');
+            li.setAttribute('part', 'menu-divider');
+            li.setAttribute('role', 'divider');
             return li;
         }
 

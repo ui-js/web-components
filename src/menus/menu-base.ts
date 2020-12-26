@@ -60,7 +60,7 @@ export abstract class MenuItem {
 
     abstract get type():
         | 'normal'
-        | 'separator'
+        | 'divider'
         | 'submenu'
         | 'checkbox'
         | 'radio';

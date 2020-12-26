@@ -83,9 +83,9 @@
     -moz-osx-font-smoothing: grayscale;
     -webkit-tap-highlight-color: transparent;
 
-    // &:focus {
-    //     outline: none;
-    // }
+    &:focus {
+        outline: none;
+    }
     &::-moz-focus-inner {
         border: 0;
         border-style: none;
@@ -98,6 +98,8 @@
     }
     &:after {
         border-radius: @button-border-radius + @button-focus-ring-gap;
+        border: (@button-focus-ring-gap + @button-focus-ring-width) solid
+            transparent;
         content: '';
         display: block;
         position: absolute;
@@ -107,15 +109,17 @@
         top: 0;
         margin: -@button-focus-ring-gap;
     }
-    &:focus-ring {
+    &:focus-visible {
         &:after {
             margin: -2 * @button-focus-ring-gap;
+            border: (@button-focus-ring-gap + @button-focus-ring-width) solid
+                var(--ui-primary-color-darker);
         }
     }
 
     .hover-background(@button-bgcolor--hover);
 
-    transition: all 0.12s ease-in-out;
+    transition: transform 0.12s ease-in-out;
 
     &:active {
         transform: scale(@down-state-scale);

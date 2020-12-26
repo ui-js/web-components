@@ -234,6 +234,13 @@ declare global {
     export interface Window {
         UIContextMenuElement: typeof UIContextMenuElement;
     }
+    /** @internal */
+    // eslint-disable-next-line @typescript-eslint/no-namespace
+    namespace JSX {
+        interface IntrinsicElements {
+            'ui-context-menu': UIContextMenuElement;
+        }
+    }
 }
 if (!window.customElements.get('ui-context-menu')) {
     window.UIContextMenuElement = UIContextMenuElement;

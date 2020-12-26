@@ -21,7 +21,7 @@ describe('contextual-menu', () => {
                 "label": "Paste as Graphic",
                 "disabled": true
             },
-            { "type": "separator" },
+            { "type": "divider" },
             {
                 "label": "Fence",
                 "submenu": [
@@ -30,7 +30,7 @@ describe('contextual-menu', () => {
                     {"label": "Braces" }
                 ]
             },
-            { "type": "separator" },
+            { "type": "divider" },
             { "label": "Insert Row Before" },
             { "label": "Insert Row After" },
             { "label": "Insert Column Before" },

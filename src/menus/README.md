@@ -14,7 +14,7 @@ sidebar:
 When the command requires additional input to be completed, end the label with an
 ellipsis character (…). Do not use three dots (...) or any other punctuation.
 
-**Use a separator in between groups of related commands.** Grouping related
+**Use a divider in between groups of related commands.** Grouping related
 commands can make scanning the menu quicker.
 
 **You may use icons to make commands easier to recognize.** Do not use purely
@@ -55,7 +55,7 @@ The supported parts are:
 | :--------------- | :---------------------------------------------------------------------------------------------------------- |
 | `menu-container` | The element containing the menu items. Customize this part to control the layout and appearance of the menu |
 | `menu-item`      | An individual menu item. Customize this part to control the layout and appareance of individual menu items  |
-| `menu-separator` | A menu-item with a `separator` attribute                                                                    |
+| `menu-divider`   | A menu-item with a `divider` attribute                                                                      |
 | `active`         | The currently active (highlighted) menu item                                                                |
 | `checked`        | A menu item that is in a checked state                                                                      |
 | `disabled`       | A menu item in a disabled state                                                                             |
