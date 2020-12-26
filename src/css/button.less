@@ -125,7 +125,7 @@
         transform: scale(@down-state-scale);
     }
 
-    &.minimal {
+    &.lightweight {
         border: none;
         box-shadow: none;
     }
@@ -141,7 +141,7 @@
     border-color: var(--ui-primary-color-darker);
     .hover-background(@button-primary-bgcolor--hover);
 
-    &.minimal {
+    &.lightweight {
         background: transparent;
         color: var(--ui-primary-color);
         .hover-background(@button-bgcolor--hover);
@@ -155,7 +155,7 @@
 
     .hover-background(@button-secondary-bgcolor--hover);
 
-    &.minimal {
+    &.lightweight {
         background: transparent;
         color: var(--ui-secondary-color);
         .hover-background(@button-bgcolor--hover);
@@ -167,7 +167,7 @@
     color: @button-critical-color;
     border-color: var(--ui-critical-color-darker);
     .hover-background(@button-critical-bgcolor--hover);
-    &.minimal {
+    &.lightweight {
         background: transparent;
         color: var(--ui-critical-color);
         .hover-background(@button-bgcolor--hover);

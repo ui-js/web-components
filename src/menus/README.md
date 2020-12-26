@@ -2,8 +2,6 @@
 permalink: /guides/menus/
 title: Menus
 read_time: false
-sidebar:
-    - nav: 'mathlive'
 ---
 
 ## Overview
