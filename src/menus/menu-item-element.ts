@@ -74,7 +74,7 @@ export class UIMenuItem extends UIElement {
         super({ template: MENU_ITEM_TEMPLATE, style: MENU_ITEM_STYLE });
         this.reflectBooleanAttributes([
             'active',
-            'separator',
+            'divider',
             'disabled',
             'checked',
         ]);

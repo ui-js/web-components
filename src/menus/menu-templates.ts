@@ -108,7 +108,7 @@ ul.menu-container > li > .label {
 ul.menu-container > li > .label.indent {
     margin-left: 12px;
 }
-ul.menu-container > li[role=separator] {
+ul.menu-container > li[role=divider] {
     border-bottom: 1px solid #c7c7c7;
     border-radius: 0;
     padding: 0;
