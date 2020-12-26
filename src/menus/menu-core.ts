@@ -5,8 +5,8 @@ import {
 import { fitInViewport } from '../common/scrim';
 import { addPart, removePart, UIElement } from '../common/ui-element';
 import { MenuInterface, MenuItem, RootMenuInterface } from './menu-base';
-import { UIMenuItemElement } from './menu-item-element';
-import { UISubmenuElement } from './submenu-element';
+import { UIMenuItem } from './menu-item-element';
+import { UISubmenu } from './submenu-element';
 
 export type MenuItemTemplate = {
     onSelect?: (ev: CustomEvent<MenuSelectEvent>) => void;
@@ -179,8 +179,8 @@ export class Menu implements MenuInterface {
             const itemElements = this.menuHost.shadowRoot
                 .querySelector<HTMLSlotElement>('slot')
                 .assignedElements()
-                .filter<UIMenuItemElement>(
-                    (x): x is UIMenuItemElement => x.tagName === 'UI-MENU-ITEM'
+                .filter<UIMenuItem>(
+                    (x): x is UIMenuItem => x.tagName === 'UI-MENU-ITEM'
                 );
             Array.from(itemElements).forEach((x) =>
                 this.appendMenuItem(x, keyboardModifiers)
@@ -454,7 +454,7 @@ export class Menu implements MenuInterface {
     }
 
     appendMenuItem(
-        menuItem: MenuItemTemplate | UIMenuItemElement,
+        menuItem: MenuItemTemplate | UIMenuItem,
         keyboardModifiers?: KeyboardModifiers
     ): void {
         this.insertMenuItem(-1, menuItem, keyboardModifiers);
@@ -462,13 +462,13 @@ export class Menu implements MenuInterface {
 
     insertMenuItem(
         pos: number,
-        menuItem: MenuItemTemplate | UIMenuItemElement,
+        menuItem: MenuItemTemplate | UIMenuItem,
         keyboardModifiers?: KeyboardModifiers
     ): void {
         if (pos < 0) pos = Math.max(0, this._menuItems.length - 1);
 
         let item: MenuItem;
-        if (menuItem instanceof UIMenuItemElement) {
+        if (menuItem instanceof UIMenuItem) {
             item = new MenuItemFromElement(menuItem, this);
         } else {
             item = new MenuItemFromTemplate(menuItem, this, {
@@ -740,7 +740,7 @@ export class MenuItemFromElement extends MenuItem {
     // The <li> is cached
     _cachedElement: HTMLElement;
 
-    constructor(element: UIMenuItemElement, parentMenu: MenuInterface) {
+    constructor(element: UIMenuItem, parentMenu: MenuInterface) {
         super(parentMenu);
         this.parentMenu = parentMenu;
         this._sourceElement = element;
@@ -751,8 +751,8 @@ export class MenuItemFromElement extends MenuItem {
             const submenuElements = element.shadowRoot
                 .querySelector<HTMLSlotElement>('slot')
                 .assignedElements()
-                .filter<UISubmenuElement>(
-                    (x): x is UISubmenuElement => x.tagName === 'UI-SUBMENU'
+                .filter<UISubmenu>(
+                    (x): x is UISubmenu => x.tagName === 'UI-SUBMENU'
                 );
             console.assert(
                 submenuElements?.length <= 1,
@@ -916,11 +916,8 @@ export class MenuItemFromElement extends MenuItem {
 }
 
 export class Submenu extends Menu {
-    source: UISubmenuElement;
-    constructor(options: {
-        host: UISubmenuElement;
-        parentMenu: MenuInterface;
-    }) {
+    source: UISubmenu;
+    constructor(options: { host: UISubmenu; parentMenu: MenuInterface }) {
         super([], {
             parentMenu: options.parentMenu,
             host: options.host,
@@ -930,7 +927,7 @@ export class Submenu extends Menu {
     get element(): HTMLElement {
         if (this._element) return this._element;
 
-        const clone = this.source.cloneNode(true) as UISubmenuElement;
+        const clone = this.source.cloneNode(true) as UISubmenu;
         // clone.style.display = 'block';
         clone.importStyle();
         this.makeElement(clone.shadowRoot.querySelector('ul'));

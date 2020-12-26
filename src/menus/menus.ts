@@ -1,3 +1,3 @@
-export { UIContextMenuElement } from './context-menu-element';
-export { UIPopupMenuElement } from './popup-menu-element';
-export { UISubmenuElement } from './submenu-element';
+export { UIContextMenu } from './context-menu-element';
+export { UIPopupMenu } from './popup-menu-element';
+export { UISubmenu } from './submenu-element';

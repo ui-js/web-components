@@ -60,7 +60,7 @@ MENU_ITEM_TEMPLATE.innerHTML = '<slot></slot>';
  * Other elements such as the checkmark and the submenu indicator
  * are rendered by the menu container.
  */
-export class UIMenuItemElement extends UIElement {
+export class UIMenuItem extends UIElement {
     // The _menuItem is the 'model' corresponding to this element.
     private _menuItem: MenuItem;
 
@@ -81,16 +81,16 @@ export class UIMenuItemElement extends UIElement {
     }
 }
 
-export default UIMenuItemElement;
+export default UIMenuItem;
 
 declare global {
     /** @internal */
     export interface Window {
-        UIMenuItemElement: typeof UIMenuItemElement;
+        UIMenuItem: typeof UIMenuItem;
     }
 }
 
 if (!window.customElements.get('ui-menu-item')) {
-    window.UIMenuItemElement = UIMenuItemElement;
-    window.customElements.define('ui-menu-item', UIMenuItemElement);
+    window.UIMenuItem = UIMenuItem;
+    window.customElements.define('ui-menu-item', UIMenuItem);
 }

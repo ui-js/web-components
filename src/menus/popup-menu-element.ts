@@ -7,7 +7,7 @@ import { MenuItemTemplate } from './menu-core';
 import { RootMenu } from './root-menu';
 import { MENU_TEMPLATE, MENU_STYLE } from './menu-templates';
 
-export class UIPopupMenuElement extends UIElement {
+export class UIPopupMenu extends UIElement {
     private rootMenu: RootMenu;
     private templateMenuItems: MenuItemTemplate[];
     position: 'leading' | 'trailing' | 'left' | 'end';
@@ -187,16 +187,16 @@ export class UIPopupMenuElement extends UIElement {
     }
 }
 
-export default UIPopupMenuElement;
+export default UIPopupMenu;
 
 declare global {
     /** @internal */
     export interface Window {
-        UIPopupMenuElement: typeof UIPopupMenuElement;
+        UIPopupMenu: typeof UIPopupMenu;
     }
 }
 
 if (!window.customElements.get('ui-popup-menu')) {
-    window.UIPopupMenuElement = UIPopupMenuElement;
-    window.customElements.define('ui-popup-menu', UIPopupMenuElement);
+    window.UIPopupMenu = UIPopupMenu;
+    window.customElements.define('ui-popup-menu', UIPopupMenu);
 }

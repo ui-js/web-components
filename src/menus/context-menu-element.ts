@@ -34,7 +34,7 @@ import { RootMenu } from './root-menu';
  * The content of a menu (menu items and submenus) is represented by a 'model',
  * an instance of the Menu class.
  * The model is created from:
- * - argument to the UIContextMenuElement constructor
+ * - argument to the UIContextMenu constructor
  * - setting the `menuItems` property
  * - a `<script>` tag containing a JSON description of menu items
  * - a set of child `<ui-menu-item>` elements.
@@ -58,7 +58,7 @@ import { RootMenu } from './root-menu';
  * - a submenu indicator
  *
  */
-export class UIContextMenuElement extends UIElement {
+export class UIContextMenu extends UIElement {
     private rootMenu: RootMenu;
     // The menu items specified via a constructor or setter
     private templateMenuItems: MenuItemTemplate[];
@@ -227,15 +227,15 @@ export class UIContextMenuElement extends UIElement {
     }
 }
 
-export default UIContextMenuElement;
+export default UIContextMenu;
 
 declare global {
     /** @internal */
     export interface Window {
-        UIContextMenuElement: typeof UIContextMenuElement;
+        UIContextMenu: typeof UIContextMenu;
     }
 }
 if (!window.customElements.get('ui-context-menu')) {
-    window.UIContextMenuElement = UIContextMenuElement;
-    window.customElements.define('ui-context-menu', UIContextMenuElement);
+    window.UIContextMenu = UIContextMenu;
+    window.customElements.define('ui-context-menu', UIContextMenu);
 }

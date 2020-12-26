@@ -1,4 +1,4 @@
-import { UIContextMenuElement } from '../context-menu-element';
+import { UIContextMenu } from '../context-menu-element';
 
 describe('contextual-menu', () => {
     it('renders a simple contextual menu with markup', async () => {
@@ -41,14 +41,14 @@ describe('contextual-menu', () => {
 
         const el = window.document.body.getElementsByTagName(
             'ui-context-menu'
-        )[0] as UIContextMenuElement;
+        )[0] as UIContextMenu;
 
         // The following expect() is important.
         // Without it, the './context-menu-element' module get stripped
         // (and therefore the <ui-context-menu> tag fails)
-        // as the "as UIContextMenuElement" statement is not sufficient to
+        // as the "as UIContextMenu" statement is not sufficient to
         // keep a reference to the module.
-        expect(el instanceof UIContextMenuElement).toBeTruthy();
+        expect(el instanceof UIContextMenu).toBeTruthy();
 
         el.show();
         expect(el.shadowRoot.innerHTML).toMatchSnapshot();

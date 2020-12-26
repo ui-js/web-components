@@ -7,7 +7,7 @@ import {
  * Base class to represent a menu item.
  * There are two subclasses:
  * - MenuItemFromTemplate for menu items created from a JSON template
- * - MenuItemFromElement for menu items created for a UIMenuItemElement
+ * - MenuItemFromElement for menu items created for a UIMenuItem
  */
 export abstract class MenuItem {
     parentMenu: MenuInterface;

@@ -9,7 +9,7 @@ import { MENU_STYLE, MENU_TEMPLATE } from './menu-templates';
  *
  * It can include a `<style>` tag.
  */
-export class UISubmenuElement extends UIElement {
+export class UISubmenu extends UIElement {
     constructor() {
         super({
             template: MENU_TEMPLATE,
@@ -17,16 +17,13 @@ export class UISubmenuElement extends UIElement {
         });
     }
 }
-
-export default UISubmenuElement;
-
 declare global {
     /** @internal */
     export interface Window {
-        UISubmenuElement: typeof UISubmenuElement;
+        UISubmenu: typeof UISubmenu;
     }
 }
 if (!window.customElements.get('ui-submenu')) {
-    window.UISubmenuElement = UISubmenuElement;
-    window.customElements.define('ui-submenu', UISubmenuElement);
+    window.UISubmenu = UISubmenu;
+    window.customElements.define('ui-submenu', UISubmenu);
 }
