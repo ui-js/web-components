@@ -61,36 +61,31 @@ MENU_ITEM_TEMPLATE.innerHTML = '<slot></slot>';
  * are rendered by the menu container.
  */
 export class UIMenuItemElement extends UIElement {
-    // The _menuItem is the 'model' corresponding to this element.
-    private _menuItem: MenuItem;
+  // The _menuItem is the 'model' corresponding to this element.
+  private _menuItem: MenuItem;
 
-    set menuItem(value: MenuItem) {
-        this._menuItem = value;
-    }
-    get menuItem(): MenuItem {
-        return this._menuItem;
-    }
-    constructor() {
-        super({ template: MENU_ITEM_TEMPLATE, style: MENU_ITEM_STYLE });
-        this.reflectBooleanAttributes([
-            'active',
-            'divider',
-            'disabled',
-            'checked',
-        ]);
-    }
+  set menuItem(value: MenuItem) {
+    this._menuItem = value;
+  }
+  get menuItem(): MenuItem {
+    return this._menuItem;
+  }
+  constructor() {
+    super({ template: MENU_ITEM_TEMPLATE, style: MENU_ITEM_STYLE });
+    this.reflectBooleanAttributes(['active', 'divider', 'disabled', 'checked']);
+  }
 }
 
 export default UIMenuItemElement;
 
 declare global {
-    /** @internal */
-    export interface Window {
-        UIMenuItemElement: typeof UIMenuItemElement;
-    }
+  /** @internal */
+  export interface Window {
+    UIMenuItemElement: typeof UIMenuItemElement;
+  }
 }
 
 if (!window.customElements.get('ui-menu-item')) {
-    window.UIMenuItemElement = UIMenuItemElement;
-    window.customElements.define('ui-menu-item', UIMenuItemElement);
+  window.UIMenuItemElement = UIMenuItemElement;
+  window.customElements.define('ui-menu-item', UIMenuItemElement);
 }

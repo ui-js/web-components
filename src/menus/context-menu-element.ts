@@ -1,8 +1,8 @@
 import {
-    eventLocation,
-    keyboardModifiersFromEvent,
-    KeyboardModifiers,
-    LongPressDetector,
+  eventLocation,
+  keyboardModifiersFromEvent,
+  KeyboardModifiers,
+  LongPressDetector,
 } from '../common/events';
 import { UIElement } from '../common/ui-element';
 import { MenuItemTemplate } from './menu-core';
@@ -59,190 +59,185 @@ import { RootMenu } from './root-menu';
  *
  */
 export class UIContextMenuElement extends UIElement {
-    private rootMenu: RootMenu;
-    // The menu items specified via a constructor or setter
-    private templateMenuItems: MenuItemTemplate[];
+  private rootMenu: RootMenu;
+  // The menu items specified via a constructor or setter
+  private templateMenuItems: MenuItemTemplate[];
 
-    private longPressDetector: LongPressDetector;
+  private longPressDetector: LongPressDetector;
 
-    constructor(menuItems?: MenuItemTemplate[]) {
-        super({
-            template: MENU_TEMPLATE,
-            style: MENU_STYLE,
+  constructor(menuItems?: MenuItemTemplate[]) {
+    super({
+      template: MENU_TEMPLATE,
+      style: MENU_STYLE,
+    });
+    this.templateMenuItems = menuItems ?? [];
+  }
+
+  set menuItems(menuItems: MenuItemTemplate[]) {
+    this.templateMenuItems = menuItems;
+    if (this.rootMenu) {
+      this.rootMenu.menuItemTemplates = menuItems;
+    }
+  }
+  get menuItems(): MenuItemTemplate[] {
+    return this.templateMenuItems;
+  }
+
+  /**
+   * @internal
+   */
+  handleEvent(event: Event): void {
+    this.longPressDetector?.dispose();
+    this.longPressDetector = undefined;
+
+    if (event.type === 'contextmenu') {
+      const evt = event as MouseEvent;
+      this.show({
+        location: [Math.round(evt.clientX), Math.round(evt.clientY)],
+        keyboardModifiers: keyboardModifiersFromEvent(evt),
+      });
+      event.preventDefault();
+      event.stopPropagation();
+    } else if (event.type === 'keydown') {
+      const evt = event as KeyboardEvent;
+      if (evt.code === 'ContextMenu' || (evt.code === 'F10' && evt.shiftKey)) {
+        // shift+F10 = contextual menu
+        // Get the center of the parent
+        const bounds = this.parentElement?.getBoundingClientRect();
+        if (bounds) {
+          this.show({
+            location: [
+              Math.round(bounds.left + bounds.width / 2),
+              Math.round(bounds.top + bounds.height / 2),
+            ],
+            keyboardModifiers: keyboardModifiersFromEvent(evt),
+          });
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      }
+    } else if (event.type === 'pointerdown') {
+      if (event.target === this.shadowRoot.host.parentNode) {
+        const pt = eventLocation(event);
+        this.longPressDetector = new LongPressDetector(event, () => {
+          this.show({
+            location: pt,
+            keyboardModifiers: keyboardModifiersFromEvent(event),
+          });
         });
-        this.templateMenuItems = menuItems ?? [];
+        event.preventDefault();
+        event.stopPropagation();
+      }
     }
+  }
+  /**
+   * Custom elements lifecycle hooks
+   * @internal
+   */
+  connectedCallback(): void {
+    super.connectedCallback();
+    // Listen for contextual menu in the parent
+    const parent = this.parentNode;
+    parent.addEventListener('contextmenu', this);
+    parent.addEventListener('keydown', this);
+    parent.addEventListener('pointerdown', this);
+  }
+  /**
+   * Custom elements lifecycle hooks
+   * @internal
+   */
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    const parent = this.parentNode;
+    if (parent) {
+      parent.removeEventListener('contextmenu', this);
+      parent.removeEventListener('keydown', this);
+      parent.removeEventListener('pointerdown', this);
+    }
+  }
+  /**
+   * @internal
+   */
+  focus(): void {
+    super.focus();
+    if (this.rootMenu?.state !== 'closed') {
+      if (this.rootMenu.activeMenuItem) {
+        this.rootMenu.activeMenuItem.element.focus();
+      } else {
+        this.rootMenu.element.focus();
+      }
+    }
+  }
+  /**
+   * Display the menu at the specified location.
+   * If provided, the `keyboardModifiers` option can change what commands
+   * are visible, enabled, or what their label is.
+   *
+   * The contextual menu is shown automatically when the appropriate UI gesture
+   * is performed by the user (right-click, shift+F10, etc...). This method
+   * only needs to be called to trigger the menu manually (for example to
+   * trigger it on click of an item).
+   */
+  show(options?: {
+    location?: [x: number, y: number];
+    keyboardModifiers?: KeyboardModifiers;
+  }): void {
+    if (!this.rootMenu) {
+      // Import inline (in the component) style sheet
+      this.importStyle();
 
-    set menuItems(menuItems: MenuItemTemplate[]) {
-        this.templateMenuItems = menuItems;
-        if (this.rootMenu) {
-            this.rootMenu.menuItemTemplates = menuItems;
+      // Inline menu items (as a JSON structure in a <script> tag
+      // in the markup)
+      let jsonMenuItems = this.json;
+      if (!Array.isArray(jsonMenuItems)) jsonMenuItems = [];
+      this.rootMenu = new RootMenu(
+        [...this.templateMenuItems, ...jsonMenuItems],
+        {
+          host: this.shadowRoot.host,
+          assignedElement: this.shadowRoot.querySelector<HTMLElement>('ul'),
         }
+      );
     }
-    get menuItems(): MenuItemTemplate[] {
-        return this.templateMenuItems;
+    this.style.display = 'block';
+    if (this.rootMenu.show({ ...options, parent: this.shadowRoot })) {
+      if (!this.hasAttribute('tabindex')) {
+        this.setAttribute('tabindex', '-1');
+      }
+      this.focus();
+    } else {
+      this.style.display = 'none';
     }
-
-    /**
-     * @internal
-     */
-    handleEvent(event: Event): void {
-        this.longPressDetector?.dispose();
-        this.longPressDetector = undefined;
-
-        if (event.type === 'contextmenu') {
-            const evt = event as MouseEvent;
-            this.show({
-                location: [Math.round(evt.clientX), Math.round(evt.clientY)],
-                keyboardModifiers: keyboardModifiersFromEvent(evt),
-            });
-            event.preventDefault();
-            event.stopPropagation();
-        } else if (event.type === 'keydown') {
-            const evt = event as KeyboardEvent;
-            if (
-                evt.code === 'ContextMenu' ||
-                (evt.code === 'F10' && evt.shiftKey)
-            ) {
-                // shift+F10 = contextual menu
-                // Get the center of the parent
-                const bounds = this.parentElement?.getBoundingClientRect();
-                if (bounds) {
-                    this.show({
-                        location: [
-                            Math.round(bounds.left + bounds.width / 2),
-                            Math.round(bounds.top + bounds.height / 2),
-                        ],
-                        keyboardModifiers: keyboardModifiersFromEvent(evt),
-                    });
-                    event.preventDefault();
-                    event.stopPropagation();
-                }
-            }
-        } else if (event.type === 'pointerdown') {
-            if (event.target === this.shadowRoot.host.parentNode) {
-                const pt = eventLocation(event);
-                this.longPressDetector = new LongPressDetector(event, () => {
-                    this.show({
-                        location: pt,
-                        keyboardModifiers: keyboardModifiersFromEvent(event),
-                    });
-                });
-                event.preventDefault();
-                event.stopPropagation();
-            }
-        }
-    }
-    /**
-     * Custom elements lifecycle hooks
-     * @internal
-     */
-    connectedCallback(): void {
-        super.connectedCallback();
-        // Listen for contextual menu in the parent
-        const parent = this.parentNode;
-        parent.addEventListener('contextmenu', this);
-        parent.addEventListener('keydown', this);
-        parent.addEventListener('pointerdown', this);
-    }
-    /**
-     * Custom elements lifecycle hooks
-     * @internal
-     */
-    disconnectedCallback(): void {
-        super.disconnectedCallback();
-        const parent = this.parentNode;
-        if (parent) {
-            parent.removeEventListener('contextmenu', this);
-            parent.removeEventListener('keydown', this);
-            parent.removeEventListener('pointerdown', this);
-        }
-    }
-    /**
-     * @internal
-     */
-    focus(): void {
-        super.focus();
-        if (this.rootMenu?.state !== 'closed') {
-            if (this.rootMenu.activeMenuItem) {
-                this.rootMenu.activeMenuItem.element.focus();
-            } else {
-                this.rootMenu.element.focus();
-            }
-        }
-    }
-    /**
-     * Display the menu at the specified location.
-     * If provided, the `keyboardModifiers` option can change what commands
-     * are visible, enabled, or what their label is.
-     *
-     * The contextual menu is shown automatically when the appropriate UI gesture
-     * is performed by the user (right-click, shift+F10, etc...). This method
-     * only needs to be called to trigger the menu manually (for example to
-     * trigger it on click of an item).
-     */
-    show(options?: {
-        location?: [x: number, y: number];
-        keyboardModifiers?: KeyboardModifiers;
-    }): void {
-        if (!this.rootMenu) {
-            // Import inline (in the component) style sheet
-            this.importStyle();
-
-            // Inline menu items (as a JSON structure in a <script> tag
-            // in the markup)
-            let jsonMenuItems = this.json;
-            if (!Array.isArray(jsonMenuItems)) jsonMenuItems = [];
-            this.rootMenu = new RootMenu(
-                [...this.templateMenuItems, ...jsonMenuItems],
-                {
-                    host: this.shadowRoot.host,
-                    assignedElement: this.shadowRoot.querySelector<HTMLElement>(
-                        'ul'
-                    ),
-                }
-            );
-        }
-        this.style.display = 'block';
-        if (this.rootMenu.show({ ...options, parent: this.shadowRoot })) {
-            if (!this.hasAttribute('tabindex')) {
-                this.setAttribute('tabindex', '-1');
-            }
-            this.focus();
-        } else {
-            this.style.display = 'none';
-        }
-    }
-    /**
-     * Hide the menu.
-     *
-     * The visibility of the menu is typically controlled by the user
-     * interaction: the menu is automatically hidden if the user release the
-     * mouse button, or after having selected a command. This is a manual
-     * override that should be very rarely needed.
-     */
-    hide(): void {
-        this.rootMenu?.hide();
-        this.style.display = 'none';
-    }
+  }
+  /**
+   * Hide the menu.
+   *
+   * The visibility of the menu is typically controlled by the user
+   * interaction: the menu is automatically hidden if the user release the
+   * mouse button, or after having selected a command. This is a manual
+   * override that should be very rarely needed.
+   */
+  hide(): void {
+    this.rootMenu?.hide();
+    this.style.display = 'none';
+  }
 }
 
 export default UIContextMenuElement;
 
 declare global {
-    /** @internal */
-    export interface Window {
-        UIContextMenuElement: typeof UIContextMenuElement;
+  /** @internal */
+  export interface Window {
+    UIContextMenuElement: typeof UIContextMenuElement;
+  }
+  /** @internal */
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace JSX {
+    interface IntrinsicElements {
+      'ui-context-menu': UIContextMenuElement;
     }
-    /** @internal */
-    // eslint-disable-next-line @typescript-eslint/no-namespace
-    namespace JSX {
-        interface IntrinsicElements {
-            'ui-context-menu': UIContextMenuElement;
-        }
-    }
+  }
 }
 if (!window.customElements.get('ui-context-menu')) {
-    window.UIContextMenuElement = UIContextMenuElement;
-    window.customElements.define('ui-context-menu', UIContextMenuElement);
+  window.UIContextMenuElement = UIContextMenuElement;
+  window.customElements.define('ui-context-menu', UIContextMenuElement);
 }

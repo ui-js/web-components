@@ -10,23 +10,23 @@ import { MENU_STYLE, MENU_TEMPLATE } from './menu-templates';
  * It can include a `<style>` tag.
  */
 export class UISubmenuElement extends UIElement {
-    constructor() {
-        super({
-            template: MENU_TEMPLATE,
-            style: MENU_STYLE,
-        });
-    }
+  constructor() {
+    super({
+      template: MENU_TEMPLATE,
+      style: MENU_STYLE,
+    });
+  }
 }
 
 export default UISubmenuElement;
 
 declare global {
-    /** @internal */
-    export interface Window {
-        UISubmenuElement: typeof UISubmenuElement;
-    }
+  /** @internal */
+  export interface Window {
+    UISubmenuElement: typeof UISubmenuElement;
+  }
 }
 if (!window.customElements.get('ui-submenu')) {
-    window.UISubmenuElement = UISubmenuElement;
-    window.customElements.define('ui-submenu', UISubmenuElement);
+  window.UISubmenuElement = UISubmenuElement;
+  window.customElements.define('ui-submenu', UISubmenuElement);
 }
