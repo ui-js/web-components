@@ -23,7 +23,9 @@ declare global {
     UISubmenu: typeof UISubmenu;
   }
 }
-if (!window.customElements.get('ui-submenu')) {
-  window.UISubmenu = UISubmenu;
-  window.customElements.define('ui-submenu', UISubmenu);
-}
+
+void UIElement.register({
+  tag: 'ui-submenu',
+  className: 'UISubmenu',
+  constructor: UISubmenu,
+});

@@ -8,11 +8,12 @@ import { RootMenu } from './root-menu';
 import { MENU_TEMPLATE, MENU_STYLE } from './menu-templates';
 
 export class UIPopupMenu extends UIElement {
-  private rootMenu: RootMenu;
-  private templateMenuItems: MenuItemTemplate[];
-  position: 'leading' | 'trailing' | 'left' | 'end';
+  position: 'leading' | 'trailing' | 'left' | 'end' = 'leading';
 
-  private _savedTransform: string;
+  private rootMenu?: RootMenu;
+  private templateMenuItems: MenuItemTemplate[];
+
+  private _savedTransform?: string;
 
   constructor(menuItems?: MenuItemTemplate[]) {
     super({
@@ -23,14 +24,15 @@ export class UIPopupMenu extends UIElement {
     this.reflectStringAttribute('position');
   }
 
+  get menuItems(): MenuItemTemplate[] {
+    return this.templateMenuItems;
+  }
+
   set menuItems(menuItems: MenuItemTemplate[]) {
     this.templateMenuItems = menuItems;
     if (this.rootMenu) {
       this.rootMenu.menuItemTemplates = menuItems;
     }
-  }
-  get menuItems(): MenuItemTemplate[] {
-    return this.templateMenuItems;
   }
 
   /**
@@ -47,8 +49,8 @@ export class UIPopupMenu extends UIElement {
         event.stopPropagation();
       }
     } else if (event.type === 'pointerdown') {
-      console.assert(this.shadowRoot.host.parentNode === this.parentElement);
-      if (event.target === this.shadowRoot.host.parentNode) {
+      console.assert(this.shadowRoot?.host.parentNode === this.parentElement);
+      if (event.target === this.shadowRoot?.host.parentNode) {
         this.show({
           keyboardModifiers: keyboardModifiersFromEvent(event),
         });
@@ -57,6 +59,7 @@ export class UIPopupMenu extends UIElement {
       }
     }
   }
+
   /**
    * Custom elements lifecycle hooks
    * @internal
@@ -65,9 +68,12 @@ export class UIPopupMenu extends UIElement {
     super.connectedCallback();
     // Listen for contextual menu in the parent
     const parent = this.parentNode;
-    parent.addEventListener('keydown', this);
-    parent.addEventListener('pointerdown', this);
+    if (parent) {
+      parent.addEventListener('keydown', this);
+      parent.addEventListener('pointerdown', this);
+    }
   }
+
   /**
    * Custom elements lifecycle hooks
    * @internal
@@ -80,19 +86,21 @@ export class UIPopupMenu extends UIElement {
       parent.removeEventListener('pointerdown', this);
     }
   }
+
   /**
    * @internal
    */
   focus(): void {
     super.focus();
-    if (this.rootMenu?.state !== 'closed') {
+    if (this.rootMenu && this.rootMenu.state !== 'closed') {
       if (this.rootMenu.activeMenuItem) {
-        this.rootMenu.activeMenuItem.element.focus();
+        this.rootMenu.activeMenuItem.element?.focus();
       } else {
         this.rootMenu.element.focus();
       }
     }
   }
+
   /**
    * Display the menu at the specified location.
    * If provided, the `keyboardModifiers` option can change what commands
@@ -111,16 +119,17 @@ export class UIPopupMenu extends UIElement {
 
       // Inline menu items (as a JSON structure in a <script> tag
       // in the markup)
-      let jsonMenuItems = this.json;
+      let jsonMenuItems = (this.json as unknown) as MenuItemTemplate[];
       if (!Array.isArray(jsonMenuItems)) jsonMenuItems = [];
       this.rootMenu = new RootMenu(
         [...this.templateMenuItems, ...jsonMenuItems],
         {
-          host: this.shadowRoot.host,
-          assignedElement: this.shadowRoot.querySelector<HTMLElement>('ul'),
+          host: this.shadowRoot?.host,
+          assignedElement: this.shadowRoot?.querySelector<HTMLElement>('ul'),
         }
       );
     }
+
     this.style.display = 'inline-block';
     // This is yucky...
     // The 'fixed' display mode (used by the scrim to position itself over
@@ -135,6 +144,7 @@ export class UIPopupMenu extends UIElement {
     if (this._savedTransform !== 'none') {
       this.parentElement.style.transform = 'none';
     }
+
     const bounds = this.parentElement.getBoundingClientRect();
     if (
       this.rootMenu.show({
@@ -153,11 +163,13 @@ export class UIPopupMenu extends UIElement {
       if (!this.hasAttribute('tabindex')) {
         this.setAttribute('tabindex', '-1');
       }
+
       this.focus();
     } else {
       this.style.display = 'none';
     }
   }
+
   /**
    * Hide the menu.
    *
@@ -169,8 +181,8 @@ export class UIPopupMenu extends UIElement {
   hide(): void {
     this.rootMenu?.hide();
     this.style.display = 'none';
-    if (this._savedTransform !== 'none') {
-      this.parentElement.style.transform = this._savedTransform;
+    if (this._savedTransform !== 'none' && this.parentElement) {
+      this.parentElement.style.transform = this._savedTransform ?? 'none';
     }
   }
 }
@@ -184,7 +196,8 @@ declare global {
   }
 }
 
-if (!window.customElements.get('ui-popup-menu')) {
-  window.UIPopupMenu = UIPopupMenu;
-  window.customElements.define('ui-popup-menu', UIPopupMenu);
-}
+void UIElement.register({
+  tag: 'ui-popup-menu',
+  className: 'UIPopupMenu',
+  constructor: UIPopupMenu,
+});

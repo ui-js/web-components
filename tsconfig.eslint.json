@@ -1,23 +1,23 @@
 {
-    "extends": "./tsconfig.json",
-    "include": [
-        "./src",
-        "./*.js",
-        "**/*.js",
-        "**/*.test.ts",
-        "**/*.spec.ts",
-        "**/*.less"
-    ],
-    "exclude": [
-        "coverage",
-        // "test",
-        "node_modules",
-        // "**/*.spec.ts",
-        "dist",
-        "build",
-        "examples",
-        "docs",
-        "tutorials"
-        // "**/*.config.js"
-    ]
+  "extends": "./tsconfig.json",
+  "include": [
+    "./src",
+    "./*.js",
+    "**/*.js",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "**/*.less",
+    "./examples"
+  ],
+  "exclude": [
+    "coverage",
+    // "test",
+    "node_modules",
+    // "**/*.spec.ts",
+    "dist",
+    "build",
+    "docs",
+    "tutorials"
+    // "**/*.config.js"
+  ]
 }

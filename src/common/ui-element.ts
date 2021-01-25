@@ -1,9 +1,67 @@
+import { Json } from './json';
+import { dirty, Updatable } from './updatable';
+
+/**
+ * In general, the 'source of truth' should be a property rather than an
+ * attribute.
+ *
+ * When that's the case, the property definition specifies how the attribute
+ * and property should coordinate:
+ * - read initial property value from attribute (or not if attribute = false)
+ * - observe attribute: update property value when attribute is changed (or not )
+ * - reflect property: update attribute value when property value is changed (or not)
+ *
+ * If the source of truth is an attribute, simply declare a get/set accessor
+ * for the property that reads/write to the attribute.
+ */
+export type PropertyDefinition = {
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  type: String | Boolean | Number | Function | string[];
+  default: string;
+  /** If a string, reflect property to attribute with specified name
+   * If true, reflect property to attribute named from property name (kebab-case
+   * variant)
+   * If false, don't initialize property with attribute value, attribute
+   * changes will not affect property
+   * Default: true
+   */
+  attribute: boolean | string;
+  /**
+   * When attribute is updated => property is updated
+   * When property is updated:
+   * If true => the attribute is updated
+   * If false => the attribute is *not* updated
+   * Default: false
+   */
+  reflect: boolean;
+};
+
+/**
+ * - When the 'source of truth' is an attribute
+ * - Adds property getter/setter reflecting the value of the attribute
+ * - Use when the attribute is readonly (used for the construction of the element)
+ * or rarely changed
+ */
+// export type AttributeDefinition = {
+//   // eslint-disable-next-line @typescript-eslint/ban-types
+//   type: String | Boolean | Number | Function | string[];
+//   default: unknown;
+// };
+
 /**
  * @internal
  */
-export class UIElement extends HTMLElement {
-  private _json: any;
-  private _style: string;
+export abstract class UIElement extends HTMLElement implements Updatable {
+  // Registry of UIElement classes to support `await ready()` in 'ui.ts'
+  static registry: Record<string, CustomElementConstructor> = {};
+
+  // The properties of this element and how they map to attributes
+  static properties: Readonly<Record<string, PropertyDefinition>> = {};
+
+  // Content of a `<script type='application/json'></script>` in the light DOM
+  private _json?: Json;
+  // Content of a `<style></style>` in the light DOM
+  private _style?: HTMLStyleElement | null;
 
   constructor(options?: {
     template: string | HTMLTemplateElement;
@@ -11,21 +69,71 @@ export class UIElement extends HTMLElement {
   }) {
     super();
 
-    this.attachShadow({ mode: 'open' });
+    const shadowRoot = this.attachShadow({ mode: 'open' });
 
     if (options?.template instanceof HTMLTemplateElement) {
-      this.shadowRoot.appendChild(options.template.content.cloneNode(true));
+      shadowRoot.append(options.template.content.cloneNode(true));
     } else if (typeof options?.template === 'string') {
-      this.shadowRoot.innerHTML = options.template;
+      shadowRoot.innerHTML = options.template;
     }
 
     if (options?.style instanceof HTMLTemplateElement) {
-      this.shadowRoot.appendChild(options.style.content.cloneNode(true));
+      shadowRoot.append(options.style.content.cloneNode(true));
     } else if (typeof options?.style === 'string') {
       const style = document.createElement('style');
       style.textContent = options.style;
-      this.shadowRoot.append(style);
+      shadowRoot.append(style);
     }
+  }
+
+  static async register(options: {
+    tag: string;
+    className: string;
+    constructor: CustomElementConstructor;
+  }): Promise<void> {
+    UIElement.registry[options.tag] = options.constructor;
+
+    if (!window.customElements?.get(options.tag)) {
+      (window as { [key: string]: any })[options.className] =
+        options.constructor;
+      window.customElements?.define(options.tag, options.constructor);
+    }
+
+    if (window.customElements) {
+      return window.customElements.whenDefined(options.tag);
+    }
+
+    return Promise.reject<void>(new Error('web components not supported'));
+  }
+
+  private static getAttributeNameForProperty(p: string): string | null {
+    if (!this.properties[p]) return null;
+    if (typeof this.properties[p].attribute === 'boolean') {
+      if (this.properties[p].attribute) {
+        return toKebabCase(p);
+      }
+      return null;
+    } else if (typeof this.properties[p].attribute === 'string') {
+      return this.properties[p].attribute as string;
+    }
+    return null;
+  }
+
+  static get observedAttributes(): string[] {
+    const attributes: string[] = [];
+
+    for (const prop of Object.keys(this.properties)) {
+      const attr = UIElement.getAttributeNameForProperty(prop);
+      if (attr) attributes.push(attr);
+    }
+
+    // @todo: add observed attributes from parent class, if any
+
+    return attributes;
+  }
+
+  set dirty(value: boolean) {
+    if (value) dirty(this);
   }
 
   /**
@@ -44,6 +152,7 @@ export class UIElement extends HTMLElement {
       },
     });
   }
+
   /**
    * Declare that an attribute should be reflected as a property
    */
@@ -78,27 +187,27 @@ export class UIElement extends HTMLElement {
     Object.defineProperty(this, propName, {
       enumerable: true,
       get(): string {
-        let value: string;
-        attrValues.forEach((x) => {
+        let value: string | undefined;
+        for (const x of attrValues) {
           if (this.hasAttribute(x)) {
             console.assert(
-              typeof value === 'undefined',
+              value === undefined,
               `inconsistent ${attrName} attributes on ${this}`
             );
             value = x;
           }
-        });
-        if (typeof value === 'string') return value;
+        }
+        if (value !== undefined) return value;
         return this.getAttribute(attrName);
       },
       set(value: string) {
         this.setAttribute(attrName, value);
         this.setAttribute(value, '');
-        attrValues.forEach((x) => {
+        for (const x of attrValues) {
           if (x !== value) {
             this.removeAttribute(x);
           }
-        });
+        }
       },
     });
   }
@@ -106,24 +215,25 @@ export class UIElement extends HTMLElement {
   reflectBooleanAttributes(
     attrNames: (string | [attrName: string, propName: string])[]
   ): void {
-    attrNames.forEach((x) => {
+    for (const x of attrNames) {
       if (typeof x === 'string') {
         this.reflectBooleanAttribute(x);
       } else {
         this.reflectBooleanAttribute(x[0], x[1]);
       }
-    });
+    }
   }
+
   reflectStringAttributes(
     attrNames: (string | [attrName: string, propName: string])[]
   ): void {
-    attrNames.forEach((x) => {
+    for (const x of attrNames) {
       if (typeof x === 'string') {
         this.reflectStringAttribute(x);
       } else {
         this.reflectStringAttribute(x[0], x[1]);
       }
-    });
+    }
   }
 
   get computedDir(): 'rtl' | 'ltr' {
@@ -134,8 +244,9 @@ export class UIElement extends HTMLElement {
    * @internal
    */
   connectedCallback(): void {
-    return;
+    // this.update();
   }
+
   /**
    * @internal
    */
@@ -146,50 +257,67 @@ export class UIElement extends HTMLElement {
   /**
    * @internal
    */
-  protected get json(): any {
-    if (typeof this._json === 'undefined') {
-      this._json = null;
-      const json = this.shadowRoot
-        .querySelector<HTMLSlotElement>('slot')
-        .assignedElements()
-        .filter(
-          (x) => x.tagName === 'SCRIPT' && x['type'] === 'application/json'
-        )
-        .map((x) => x.textContent)
-        .join('');
-      if (json) {
-        try {
-          this._json = JSON.parse(json);
-        } catch (e) {
-          // There was an error parsing the JSON.
-          // Display a helpful message.
-          const msg = e.toString();
-          const m = msg.match(/position ([0-9]+)/);
-          if (m) {
-            const index = parseInt(m[1]);
-            const extract = json.substring(Math.max(index - 40, 0), index);
-            throw new Error(msg + '\n' + extract.trim());
-          } else {
-            throw e;
-          }
-        }
+  protected get json(): Json {
+    if (this._json !== undefined) return this._json;
+
+    this._json = null;
+    const slot = this.shadowRoot?.querySelector<HTMLSlotElement>('slot');
+    if (!slot) return null;
+    const json: string = slot
+      .assignedElements()
+      .filter(
+        (x) =>
+          x.tagName === 'SCRIPT' &&
+          (x as HTMLScriptElement).type === 'application/json'
+      )
+      .map((x) => x.textContent)
+      .join('');
+
+    if (!json) return null;
+
+    try {
+      this._json = JSON.parse(json);
+    } catch (error) {
+      // @todo: do this if __DEV__ only
+      // There was an error parsing the JSON.
+      // Display a helpful message.
+      const message = error.toString();
+      const m = message.match(/position (\d+)/);
+      if (m) {
+        const index = Number.parseInt(m[1]);
+        const extract = json.substring(Math.max(index - 40, 0), index);
+        throw new Error(`${message}\n${extract.trim()}`);
+      } else {
+        throw error;
       }
     }
-    return this._json;
+
+    return this._json!;
   }
 
   /**
    * @internal
    */
-  protected get importedStyle(): any {
-    if (typeof this._style === 'undefined') {
-      this._style = this.shadowRoot
-        .querySelector<HTMLSlotElement>('slot')
+  protected get importedStyle(): HTMLStyleElement | null {
+    if (this._style !== undefined) return this._style;
+
+    let stylesheet = '';
+    const slot = this.shadowRoot?.querySelector<HTMLSlotElement>('slot');
+    if (slot) {
+      stylesheet = slot
         .assignedElements()
         .filter((x) => x.tagName === 'STYLE')
         .map((x) => x.textContent)
-        .join('');
+        .join('')
+        .trim();
     }
+    if (stylesheet.length === 0) {
+      this._style = null;
+    } else {
+      this._style = document.createElement('style');
+      this._style.textContent = stylesheet;
+    }
+
     return this._style;
   }
 
@@ -198,10 +326,33 @@ export class UIElement extends HTMLElement {
    */
   importStyle(): void {
     if (this.importedStyle) {
-      const style = document.createElement('style');
-      style.textContent = this.importedStyle;
-      this.shadowRoot.append(style);
+      this.shadowRoot?.append(this.importedStyle.cloneNode(true));
     }
+  }
+
+  update(): void {
+    if (!this.isConnected) return;
+
+    // Iterate over all the nodes and remove them
+    // (ensures that eventHandlers are removed, unlike innerHTML = '')
+    while (this.shadowRoot?.firstChild) {
+      this.shadowRoot.firstChild.remove();
+    }
+
+    // Add new nodes
+    const child = this.render();
+    if (child) this.shadowRoot?.append(child);
+
+    this.importStyle();
+  }
+
+  /**
+   * Return a `HTMLElement` that will get attached to the root of
+   * this element.
+   * Event handlers should get added as well.
+   */
+  render(): HTMLElement | null {
+    return null;
   }
 }
 
@@ -211,31 +362,33 @@ export class UIElement extends HTMLElement {
  *
  * Add a part name to the part list of this element.
  */
-export function addPart(el: HTMLElement, part: string): void {
-  if (!el) return;
-  const current = el.getAttribute('part') ?? '';
+export function addPart(element: HTMLElement, part: string): void {
+  if (!element) return;
+  const current = element.getAttribute('part') ?? '';
   if (!current.includes(part)) {
-    el.setAttribute('part', `${current} ${part}`);
+    element.setAttribute('part', `${current} ${part}`);
   }
 }
 
 /**
  * Remove a part name from the part list of this element.
  */
-export function removePart(el: HTMLElement, part: string): void {
-  if (!el) return;
-  const current = el.getAttribute('part') ?? '';
+export function removePart(element: HTMLElement, part: string): void {
+  if (!element) return;
+  const current = element.getAttribute('part') ?? '';
   if (current.includes(part)) {
-    el.setAttribute(
+    element.setAttribute(
       'part',
       current.replace(new RegExp('\\bs*' + part + 's*\\b', 'g'), '')
     );
   }
 }
 
-export function getComputedDir(el: HTMLElement): 'ltr' | 'rtl' {
-  if (el.dir && el.dir !== 'auto') return el.dir as 'ltr' | 'rtl';
-  if (el.parentElement) return getComputedDir(el.parentElement);
+export function getComputedDir(element: HTMLElement): 'ltr' | 'rtl' {
+  if (element.dir && element.dir !== 'auto') {
+    return element.dir as 'ltr' | 'rtl';
+  }
+  if (element.parentElement) return getComputedDir(element.parentElement);
   return 'ltr';
 }
 
@@ -251,6 +404,7 @@ export function getOppositeEdge(
   ) {
     return bounds.right;
   }
+
   return bounds.left;
 }
 
@@ -266,5 +420,19 @@ export function getEdge(
   ) {
     return bounds.left;
   }
+
   return bounds.right;
+}
+
+function toKebabCase(s: string): string {
+  return s
+    .match(
+      /[A-Z]{2,}(?=[A-Z][a-z]+[0-9]*|\b)|[A-Z]?[a-z]+[0-9]*|[A-Z]|[0-9]+/g
+    )!
+    .map((x: string) => x.toLowerCase())
+    .join('-');
+}
+
+export function toCamelCase(s: string): string {
+  return s.toLowerCase().replace(/[^a-zA-Z\d]+(.)/g, (m, c) => c.toUpperCase());
 }

@@ -44,11 +44,7 @@ export SDK_VERSION=$(cat package.json \
 | tr -d '[[:space:]]')
 
 # Clean output directories
-printf "\033[32m ● \033[0m Cleaning output directories"
-rm -rf ./dist
-rm -rf ./declarations
-rm -rf ./build
-rm -rf ./coverage
+bash ./scripts/clean.sh
 
 mkdir -p dist
 mkdir -p declarations
@@ -59,7 +55,7 @@ echo -e "\033[2K\033[80D\033[32m ✔ \033[0m Output directories cleaned out"
 # Even though we only generate declaration file, the target must be set high-enough
 # to prevent tsc from complaining (!)
 printf "\033[32m ● \033[0m Building declaration files (.d.ts)"
-npx tsc --types --target "es2020" -d --moduleResolution "node" --emitDeclarationOnly --outDir ./declarations ./src/ui.ts 
+npx tsc --types --target "es2020" -d --moduleResolution "node" --emitDeclarationOnly --outDir ./declarations ./src/web-components.ts 
 mv ./declarations/ ./dist
 rm -rf ./declarations
 echo -e "\033[2K\033[80D\033[32m ✔ \033[0m Declaration files built"

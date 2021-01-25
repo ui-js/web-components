@@ -1,19 +1,19 @@
 import { getComputedDir } from './ui-element';
 
 export class Scrim {
-  private _element: HTMLElement;
+  private _element?: HTMLElement;
 
-  private preventOverlayClose: boolean;
-  private onClose: () => void;
+  private readonly preventOverlayClose: boolean;
+  private readonly onClose?: () => void;
 
-  private savedOverflow: string;
-  private savedMarginRight: string;
+  private savedOverflow?: string;
+  private savedMarginRight?: string;
 
-  private savedActiveElement: HTMLOrSVGElement;
+  private savedActiveElement?: HTMLOrSVGElement | null;
 
   private state: 'closed' | 'opening' | 'open' | 'closing';
 
-  private translucent: boolean;
+  private readonly translucent: boolean;
 
   /**
    * - If `options.preventOverlayClose` is false, the scrim is closed if the
@@ -38,28 +38,29 @@ export class Scrim {
   get element(): HTMLElement {
     if (this._element) return this._element;
 
-    const el = document.createElement('div');
-    el.setAttribute('role', 'presentation');
+    const element = document.createElement('div');
+    element.setAttribute('role', 'presentation');
 
-    el.style.position = 'fixed';
-    el.style['contain'] = 'content';
-    el.style.top = '0';
-    el.style.left = '0';
-    el.style.right = '0';
-    el.style.bottom = '0';
-    el.style.zIndex = '9999';
-    el.style.outline = 'none';
+    element.style.position = 'fixed';
+    element.style['contain' as any] = 'content';
+    element.style.top = '0';
+    element.style.left = '0';
+    element.style.right = '0';
+    element.style.bottom = '0';
+    element.style.zIndex = '9999';
+    element.style.outline = 'none';
     if (this.translucent) {
-      el.style.background = 'rgba(255, 255, 255, .2)';
-      el.style['backdropFilter'] = 'contrast(40%)';
+      element.style.background = 'rgba(255, 255, 255, .2)';
+      element.style['backdropFilter' as any] = 'contrast(40%)';
     } else {
-      el.style.background = 'transparent';
+      element.style.background = 'transparent';
     }
-    this._element = el;
-    return el;
+
+    this._element = element;
+    return element;
   }
 
-  open(options: { root?: Node; child?: HTMLElement }): void {
+  open(options: { root?: Node | null; child?: HTMLElement }): void {
     if (this.state !== 'closed') return;
 
     this.state = 'opening';
@@ -67,10 +68,10 @@ export class Scrim {
     // Remember the previously focused element. We'll restore it when we close.
     this.savedActiveElement = deepActiveElement();
 
-    const el = this.element;
-    (options?.root ?? document.body).appendChild(el);
+    const { element } = this;
+    (options?.root ?? document.body).appendChild(element);
 
-    el.addEventListener('click', this);
+    element.addEventListener('click', this);
     document.addEventListener('touchmove', this, false);
     document.addEventListener('scroll', this, false);
 
@@ -82,13 +83,16 @@ export class Scrim {
     this.savedOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
-    const marginRight = parseFloat(getComputedStyle(document.body).marginRight);
+    const marginRight = Number.parseFloat(
+      getComputedStyle(document.body).marginRight
+    );
 
     document.body.style.marginRight = `${marginRight + scrollbarWidth}px`;
 
     if (options?.child) {
-      el.appendChild(options.child);
+      element.append(options.child);
     }
+
     this.state = 'open';
   }
 
@@ -98,22 +102,22 @@ export class Scrim {
 
     if (typeof this.onClose === 'function') this.onClose();
 
-    const el = this.element;
-    el.removeEventListener('click', this);
+    const { element } = this;
+    element.removeEventListener('click', this);
     document.removeEventListener('touchmove', this, false);
     document.removeEventListener('scroll', this, false);
 
-    el.parentNode.removeChild(el);
+    element.remove();
 
     // Restore body state
-    document.body.style.overflow = this.savedOverflow;
-    document.body.style.marginRight = this.savedMarginRight;
+    document.body.style.overflow = this.savedOverflow ?? '';
+    document.body.style.marginRight = this.savedMarginRight ?? '';
 
     // Restore the previously focused element
     this.savedActiveElement?.focus?.();
 
     // Remove all children
-    el.innerHTML = '';
+    element.innerHTML = '';
     this.state = 'closed';
   }
 
@@ -123,7 +127,6 @@ export class Scrim {
         this.close();
         ev.preventDefault();
         ev.stopPropagation();
-        return;
       } else if (
         ev.target === document &&
         (ev.type === 'touchmove' || ev.type === 'scroll')
@@ -132,7 +135,6 @@ export class Scrim {
         this.close();
         ev.preventDefault();
         ev.stopPropagation();
-        return;
       }
     }
   }
@@ -143,6 +145,7 @@ function deepActiveElement(): HTMLOrSVGElement | null {
   while (a?.shadowRoot?.activeElement) {
     a = a.shadowRoot.activeElement;
   }
+
   return (a as unknown) as HTMLOrSVGElement;
 }
 
@@ -158,7 +161,9 @@ function getEffectivePos(
 ): number {
   if (placement === 'middle') {
     return pos - length / 2;
-  } else if (
+  }
+
+  if (
     (placement === 'start' && dir === 'ltr') ||
     (placement === 'end' && dir === 'rtl') ||
     placement === 'top' ||
@@ -166,6 +171,7 @@ function getEffectivePos(
   ) {
     return Math.max(0, pos - length);
   }
+
   return pos;
 }
 
@@ -177,7 +183,9 @@ export function getOppositeEffectivePos(
 ): number {
   if (placement === 'middle') {
     return pos - length / 2;
-  } else if (
+  }
+
+  if (
     (placement === 'start' && dir === 'ltr') ||
     (placement === 'end' && dir === 'rtl') ||
     placement === 'top' ||
@@ -185,6 +193,7 @@ export function getOppositeEffectivePos(
   ) {
     return pos;
   }
+
   return pos - length;
 }
 
@@ -199,7 +208,7 @@ export function getOppositeEffectivePos(
  * left as necessary until it fits (and adjusting its width/height as a result)
  */
 export function fitInViewport(
-  el: HTMLElement,
+  element: HTMLElement,
   options: {
     location: [x: number, y: number];
     alternateLocation?: [x: number, y: number];
@@ -211,29 +220,29 @@ export function fitInViewport(
     maxHeight?: number;
   }
 ): void {
-  const dir = getComputedDir(el) ?? 'ltr';
+  const dir = getComputedDir(element) ?? 'ltr';
 
   // Reset any location, so we can get the natural width/height
-  el.style.display = 'block';
-  el.style.position = 'absolute';
-  el.style.left = 'auto';
-  el.style.top = 'auto';
-  el.style.right = 'auto';
-  el.style.bottom = 'auto';
-  el.style.height = 'auto';
-  el.style.width = 'auto';
+  element.style.display = 'block';
+  element.style.position = 'absolute';
+  element.style.left = 'auto';
+  element.style.top = 'auto';
+  element.style.right = 'auto';
+  element.style.bottom = 'auto';
+  element.style.height = 'auto';
+  element.style.width = 'auto';
 
-  const elementBounds = el.getBoundingClientRect();
+  const elementBounds = element.getBoundingClientRect();
 
   //
   // Vertical positioning
   //
-  const maxHeight = isFinite(options.maxHeight)
-    ? Math.min(options.maxHeight, window.innerHeight)
+  const maxHeight = Number.isFinite(options.maxHeight)
+    ? Math.min(options.maxHeight!, window.innerHeight)
     : window.innerHeight;
   let height = Math.min(maxHeight, options.height ?? elementBounds.height);
 
-  let top = getEffectivePos(
+  let top: number | undefined = getEffectivePos(
     options.location[1],
     height,
     options.verticalPos,
@@ -254,26 +263,28 @@ export function fitInViewport(
       top = undefined;
     }
   }
-  if (!isFinite(top)) {
+
+  if (!Number.isFinite(top)) {
     // Move element as high as possible
     top = Math.max(8, window.innerHeight - 8 - height);
     if (8 + height > window.innerHeight - 8) {
       // Still doesn't fit, we'll clamp it
-      el.style.bottom = '8px';
+      element.style.bottom = '8px';
     }
   }
-  height = Math.min(top + height, window.innerHeight - 8) - top;
+
+  height = Math.min(top! + height, window.innerHeight - 8) - top!;
 
   //
   // Horizontal positioning
   //
-  const maxWidth = isFinite(options.maxWidth)
-    ? Math.min(options.maxWidth, window.innerWidth)
+  const maxWidth = Number.isFinite(options.maxWidth)
+    ? Math.min(options.maxWidth!, window.innerWidth)
     : window.innerWidth;
 
   let width = Math.min(maxWidth, options.width ?? elementBounds.width);
 
-  let left = getEffectivePos(
+  let left: number | undefined = getEffectivePos(
     options.location[0],
     width,
     options.horizontalPos,
@@ -294,18 +305,20 @@ export function fitInViewport(
       left = undefined;
     }
   }
-  if (!isFinite(left)) {
+
+  if (!Number.isFinite(left)) {
     // Move element as high as possible
     left = Math.max(8, window.innerWidth - 8 - width);
     if (8 + width > window.innerWidth - 8) {
       // Still doesn't fit, we'll clamp it
-      el.style.right = '8px';
+      element.style.right = '8px';
     }
   }
-  width = Math.min(left + width, window.innerWidth - 8) - left;
 
-  el.style.left = `${Math.round(left).toString()}px`;
-  el.style.top = `${Math.round(top).toString()}px`;
-  el.style.height = `${Math.round(height).toString()}px`;
-  el.style.width = `${Math.round(width).toString()}px`;
+  width = Math.min(left! + width, window.innerWidth - 8) - left!;
+
+  element.style.left = `${Math.round(left!).toString()}px`;
+  element.style.top = `${Math.round(top!).toString()}px`;
+  element.style.height = `${Math.round(height).toString()}px`;
+  element.style.width = `${Math.round(width).toString()}px`;
 }

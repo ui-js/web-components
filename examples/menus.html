@@ -32,7 +32,7 @@
         <h1>ui-js Menus Playground</h1>
     </header>
     <main class='centered'>
-        <div tabindex="0" class='zebra-zone'>
+        <!-- <div tabindex="0" class='zebra-zone'>
             <ui-context-menu>
                 <script type='application/json'>
                 [
@@ -163,88 +163,91 @@
                     </ui-submenu>
             </ui-context-menu>
             Custom menu with submenu
-        </div>
+        </div> -->
 
         <div tabindex="0" class="zebra-zone">
             <ui-context-menu id='font-list'></ui-context-menu>
             Font menu
         </div>
-        <script>
-            document.getElementById('font-list').menuItems = [
-                { label: "Andale Mono" },
-                { label: "Apple Chancery" },
-                { label: "Arial" },
-                { label: "Arial Black" },
-                { label: "Avenir" },
-                { label: "Avenir Next" },
-                { label: "Baskervill" },
-                { label: "Big Caslon" },
-                { label: "Bodoni" },
-                { label: "Bodoni Oldstyle" },
-                { label: "Brush Script" },
-                { label: "Chalkboard" },
-                { label: "Chalkduster" },
-                { label: "Charter" },
-                { label: "Cochin" },
-                { label: "Comic Sans" },
-                { label: "Copperplate" },
-                { label: "Corsiva" },
-                { label: "Courier" },
-                { label: "Courier New" },
-                { label: "Damascus" },
-                { label: "Didot" },
-                { label: "DIN" },
-                { label: "Futura" },
-                { label: "Geneva" },
-                { label: "Georgia" },
-                { label: "Gill Sans" },
-                { label: "Helvetica" },
-                { label: "Helvetica Neue" },
-                { label: "Herculanum" },
-                { label: "Hoefler Text" },
-                { label: "IBM Plex" },
-                { label: "IBM Plex Sans" },
-                { label: "IBM Plex Mono" },
-                { label: "Impact" },
-                { label: "Lucida Grande" },
-                { label: "Marker Felt" },
-                { label: "Menlo" },
-                { label: "Monaco" },
-                { label: "Noto Sans" },
-                { label: "Optima" },
-                { label: "Optima Condensed" },
-                { label: "Palatino" },
-                { label: "Papyrus" },
-                { label: "Rockwell" },
-                { label: "San Francisco" },
-                { label: "Source Sans" },
-                { label: "Symbol" },
-                { label: "Tahoma" },
-                { label: "Times" },
-                { label: "Times New TRoman" },
-                { label: "Trebuchet" },
-                { label: "Verdana" },
-                { label: "Zapf Dingbats" },
-                { label: "Zapfino" },
-            ];
 
-            Array.from(document.querySelectorAll('ui-context-menu')).forEach(x =>
-                x.addEventListener('select', (ev) => console.log(ev.detail)));
-
+        <script type='module'>
+            import { ready } from '../../dist/web-components.esm.js';
+            console.log('are we ready?');
+            (async () => {
+                await ready();
+                document.getElementById('font-list').menuItems = [
+                    { label: "Andale Mono" },
+                    { label: "Apple Chancery" },
+                    { label: "Arial" },
+                    { label: "Arial Black" },
+                    { label: "Avenir" },
+                    { label: "Avenir Next" },
+                    { label: "Baskervill" },
+                    { label: "Big Caslon" },
+                    { label: "Bodoni" },
+                    { label: "Bodoni Oldstyle" },
+                    { label: "Brush Script" },
+                    { label: "Chalkboard" },
+                    { label: "Chalkduster" },
+                    { label: "Charter" },
+                    { label: "Cochin" },
+                    { label: "Comic Sans" },
+                    { label: "Copperplate" },
+                    { label: "Corsiva" },
+                    { label: "Courier" },
+                    { label: "Courier New" },
+                    { label: "Damascus" },
+                    { label: "Didot" },
+                    { label: "DIN" },
+                    { label: "Futura" },
+                    { label: "Geneva" },
+                    { label: "Georgia" },
+                    { label: "Gill Sans" },
+                    { label: "Helvetica" },
+                    { label: "Helvetica Neue" },
+                    { label: "Herculanum" },
+                    { label: "Hoefler Text" },
+                    { label: "IBM Plex" },
+                    { label: "IBM Plex Sans" },
+                    { label: "IBM Plex Mono" },
+                    { label: "Impact" },
+                    { label: "Lucida Grande" },
+                    { label: "Marker Felt" },
+                    { label: "Menlo" },
+                    { label: "Monaco" },
+                    { label: "Noto Sans" },
+                    { label: "Optima" },
+                    { label: "Optima Condensed" },
+                    { label: "Palatino" },
+                    { label: "Papyrus" },
+                    { label: "Rockwell" },
+                    { label: "San Francisco" },
+                    { label: "Source Sans" },
+                    { label: "Symbol" },
+                    { label: "Tahoma" },
+                    { label: "Times" },
+                    { label: "Times New TRoman" },
+                    { label: "Trebuchet" },
+                    { label: "Verdana" },
+                    { label: "Zapf Dingbats" },
+                    { label: "Zapfino" },
+                ];
+                for (let el of document.querySelectorAll('ui-context-menu')) {
+                    el.addEventListener('select', (ev) => console.log(ev.detail))
+                };
+            })();
         </script>
 
 
-        <!-- <div class='zebra-zone' style='opacity: .5; height: 2048px'>
-        </div> -->
 
 
-        <button class='ui-button'>Planets<ui-popup-menu>
+        <!-- <button class='ui-button'>Planets<ui-popup-menu>
                 <ui-menu-item>Anacreon</ui-menu-item>
                 <ui-menu-item>Aurora</ui-menu-item>
                 <ui-menu-item>Terminus</ui-menu-item>
                 <ui-menu-item>Trantor</ui-menu-item>
             </ui-popup-menu>
-        </button>
+        </button> -->
 
 </body>
 

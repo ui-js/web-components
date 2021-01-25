@@ -62,14 +62,16 @@ MENU_ITEM_TEMPLATE.innerHTML = '<slot></slot>';
  */
 export class UIMenuItem extends UIElement {
   // The _menuItem is the 'model' corresponding to this element.
-  private _menuItem: MenuItem;
+  private _menuItem?: MenuItem;
 
-  set menuItem(value: MenuItem) {
-    this._menuItem = value;
-  }
-  get menuItem(): MenuItem {
+  get menuItem(): MenuItem | undefined {
     return this._menuItem;
   }
+
+  set menuItem(value: MenuItem | undefined) {
+    this._menuItem = value;
+  }
+
   constructor() {
     super({ template: MENU_ITEM_TEMPLATE, style: MENU_ITEM_STYLE });
     this.reflectBooleanAttributes(['active', 'divider', 'disabled', 'checked']);
@@ -85,7 +87,8 @@ declare global {
   }
 }
 
-if (!window.customElements.get('ui-menu-item')) {
-  window.UIMenuItem = UIMenuItem;
-  window.customElements.define('ui-menu-item', UIMenuItem);
-}
+void UIElement.register({
+  tag: 'ui-menu-item',
+  className: 'UIMenuItem',
+  constructor: UIMenuItem,
+});

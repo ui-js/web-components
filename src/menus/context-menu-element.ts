@@ -59,11 +59,11 @@ import { RootMenu } from './root-menu';
  *
  */
 export class UIContextMenu extends UIElement {
-  private rootMenu: RootMenu;
+  private rootMenu?: RootMenu;
   // The menu items specified via a constructor or setter
   private templateMenuItems: MenuItemTemplate[];
 
-  private longPressDetector: LongPressDetector;
+  private longPressDetector?: LongPressDetector;
 
   constructor(menuItems?: MenuItemTemplate[]) {
     super({
@@ -79,6 +79,7 @@ export class UIContextMenu extends UIElement {
       this.rootMenu.menuItemTemplates = menuItems;
     }
   }
+
   get menuItems(): MenuItemTemplate[] {
     return this.templateMenuItems;
   }
@@ -101,7 +102,7 @@ export class UIContextMenu extends UIElement {
     } else if (event.type === 'keydown') {
       const evt = event as KeyboardEvent;
       if (evt.code === 'ContextMenu' || (evt.code === 'F10' && evt.shiftKey)) {
-        // shift+F10 = contextual menu
+        // Shift+F10 = contextual menu
         // Get the center of the parent
         const bounds = this.parentElement?.getBoundingClientRect();
         if (bounds) {
@@ -116,20 +117,22 @@ export class UIContextMenu extends UIElement {
           event.stopPropagation();
         }
       }
-    } else if (event.type === 'pointerdown') {
-      if (event.target === this.shadowRoot.host.parentNode) {
-        const pt = eventLocation(event);
-        this.longPressDetector = new LongPressDetector(event, () => {
-          this.show({
-            location: pt,
-            keyboardModifiers: keyboardModifiersFromEvent(event),
-          });
+    } else if (
+      event.type === 'pointerdown' &&
+      event.target === this.shadowRoot?.host.parentNode
+    ) {
+      const pt = eventLocation(event);
+      this.longPressDetector = new LongPressDetector(event, () => {
+        this.show({
+          location: pt,
+          keyboardModifiers: keyboardModifiersFromEvent(event),
         });
-        event.preventDefault();
-        event.stopPropagation();
-      }
+      });
+      event.preventDefault();
+      event.stopPropagation();
     }
   }
+
   /**
    * Custom elements lifecycle hooks
    * @internal
@@ -138,10 +141,13 @@ export class UIContextMenu extends UIElement {
     super.connectedCallback();
     // Listen for contextual menu in the parent
     const parent = this.parentNode;
-    parent.addEventListener('contextmenu', this);
-    parent.addEventListener('keydown', this);
-    parent.addEventListener('pointerdown', this);
+    if (parent) {
+      parent.addEventListener('contextmenu', this);
+      parent.addEventListener('keydown', this);
+      parent.addEventListener('pointerdown', this);
+    }
   }
+
   /**
    * Custom elements lifecycle hooks
    * @internal
@@ -155,19 +161,21 @@ export class UIContextMenu extends UIElement {
       parent.removeEventListener('pointerdown', this);
     }
   }
+
   /**
    * @internal
    */
   focus(): void {
     super.focus();
-    if (this.rootMenu?.state !== 'closed') {
+    if (this.rootMenu && this.rootMenu.state !== 'closed') {
       if (this.rootMenu.activeMenuItem) {
-        this.rootMenu.activeMenuItem.element.focus();
+        this.rootMenu.activeMenuItem.element?.focus();
       } else {
         this.rootMenu.element.focus();
       }
     }
   }
+
   /**
    * Display the menu at the specified location.
    * If provided, the `keyboardModifiers` option can change what commands
@@ -188,26 +196,29 @@ export class UIContextMenu extends UIElement {
 
       // Inline menu items (as a JSON structure in a <script> tag
       // in the markup)
-      let jsonMenuItems = this.json;
+      let jsonMenuItems: MenuItemTemplate[] = this.json as MenuItemTemplate[];
       if (!Array.isArray(jsonMenuItems)) jsonMenuItems = [];
       this.rootMenu = new RootMenu(
         [...this.templateMenuItems, ...jsonMenuItems],
         {
-          host: this.shadowRoot.host,
-          assignedElement: this.shadowRoot.querySelector<HTMLElement>('ul'),
+          host: this.shadowRoot?.host,
+          assignedElement: this.shadowRoot?.querySelector<HTMLElement>('ul'),
         }
       );
     }
+
     this.style.display = 'block';
-    if (this.rootMenu.show({ ...options, parent: this.shadowRoot })) {
+    if (this.rootMenu.show({ ...options, parent: this.shadowRoot! })) {
       if (!this.hasAttribute('tabindex')) {
         this.setAttribute('tabindex', '-1');
       }
+
       this.focus();
     } else {
       this.style.display = 'none';
     }
   }
+
   /**
    * Hide the menu.
    *
@@ -222,8 +233,6 @@ export class UIContextMenu extends UIElement {
   }
 }
 
-export default UIContextMenu;
-
 declare global {
   /** @internal */
   export interface Window {
@@ -237,7 +246,9 @@ declare global {
     }
   }
 }
-if (!window.customElements.get('ui-context-menu')) {
-  window.UIContextMenu = UIContextMenu;
-  window.customElements.define('ui-context-menu', UIContextMenu);
-}
+
+void UIElement.register({
+  tag: 'ui-context-menu',
+  className: 'UIContextMenu',
+  constructor: UIContextMenu,
+});

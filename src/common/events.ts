@@ -9,36 +9,40 @@ export type KeyboardModifiers = {
 // more importantly, to avoid memory leaks by using the `handleEvent()` hook
 // to ensure proper disposal of event handlers
 export class LongPressDetector {
-  private onLongPress: () => void;
-  private startPoint: [x: number, y: number];
-  private lastPoint: [x: number, y: number];
+  static DELAY = 300; // In ms
 
-  private timer: number;
+  private readonly onLongPress: () => void;
+  private readonly startPoint?: [x: number, y: number];
+  private lastPoint?: [x: number, y: number];
 
-  static DELAY = 300; // in ms
+  private timer = 0;
+
   constructor(triggerEvent: Event, onLongPress: () => void) {
     this.onLongPress = onLongPress;
-    this.startPoint = eventLocation(triggerEvent);
-    this.lastPoint = this.startPoint;
+    const location = eventLocation(triggerEvent);
+    if (!location) return;
+
+    this.startPoint = location;
+    this.lastPoint = location;
 
     this.timer = setTimeout(() => {
       this.dispose();
-      if (distance(this.lastPoint, this.startPoint) < 10) {
+      if (distance(this.lastPoint!, this.startPoint!) < 10) {
         this.onLongPress();
       }
     }, LongPressDetector.DELAY);
-    ['pointermove', 'pointerup', 'pointercancel'].forEach((x) =>
-      window.addEventListener(x, this, { passive: true })
-    );
+    for (const evt of ['pointermove', 'pointerup', 'pointercancel']) {
+      window.addEventListener(evt, this, { passive: true });
+    }
   }
 
   dispose(): void {
     clearTimeout(this.timer);
-    this.timer = undefined;
+    this.timer = 0;
 
-    ['pointermove', 'pointerup', 'pointercancel'].forEach((x) =>
-      window.removeEventListener(x, this)
-    );
+    for (const evt of ['pointermove', 'pointerup', 'pointercancel']) {
+      window.removeEventListener(evt, this);
+    }
   }
 
   handleEvent(event: Event): void {
@@ -47,9 +51,11 @@ export class LongPressDetector {
 
       event.stopPropagation();
     } else if (event.type === 'pointermove') {
-      this.lastPoint = eventLocation(event);
-
-      event.stopPropagation();
+      const location = eventLocation(event);
+      if (location) {
+        this.lastPoint = location;
+        event.stopPropagation();
+      }
     } else if (event.type === 'pointercancel') {
       this.dispose();
       event.stopPropagation();
@@ -66,11 +72,13 @@ function distance(
   return Math.sqrt(dx * dx + dy * dy);
 }
 
-export function eventLocation(evt: Event): [x: number, y: number] {
+export function eventLocation(evt: Event): [x: number, y: number] | undefined {
   if (evt instanceof MouseEvent) {
     return [evt.clientX, evt.clientY];
-  } else if (evt instanceof TouchEvent) {
-    const result = Array.from(evt.touches).reduce(
+  }
+
+  if (evt instanceof TouchEvent) {
+    const result = [...evt.touches].reduce(
       (acc, x) => [acc[0] + x.clientX, acc[1] + x.clientY],
       [0, 0]
     );
@@ -84,11 +92,15 @@ export function eventLocation(evt: Event): [x: number, y: number] {
 export function eventPointerCount(evt: Event): number {
   if (evt instanceof MouseEvent) {
     return 1;
-  } else if (evt instanceof TouchEvent) {
+  }
+
+  if (evt instanceof TouchEvent) {
     return evt.touches.length;
   }
+
   return 0;
 }
+
 /**
  * When the potential start of a long press event (`pointerdown`)
  * event is detected, this function will invoke the `fn` callback if the
@@ -115,23 +127,25 @@ export function keyboardModifiersFromEvent(ev: Event): KeyboardModifiers {
     if (ev.metaKey) result.meta = true;
     if (ev.shiftKey) result.shift = true;
   }
+
   return result;
 }
 
 export function equalKeyboardModifiers(
-  a: KeyboardModifiers,
-  b: KeyboardModifiers
+  a?: KeyboardModifiers,
+  b?: KeyboardModifiers
 ): boolean {
   if ((!a && b) || (a && !b)) return false;
+  if (!a && !b) return true;
   return (
-    a.alt === b.alt &&
-    a.control === b.control &&
-    a.shift === b.shift &&
-    a.meta === b.meta
+    a!.alt === b!.alt &&
+    a!.control === b!.control &&
+    a!.shift === b!.shift &&
+    a!.meta === b!.meta
   );
 }
 
-const PRINTABLE_KEYCODE = [
+const PRINTABLE_KEYCODE = new Set([
   'Backquote', // Japanese keyboard: hankaku/zenkaku/kanji key, which is non-printable
   'Digit0',
   'Digit1',
@@ -207,7 +221,7 @@ const PRINTABLE_KEYCODE = [
   'NumpadParenRight',
   'NumpadStar',
   'NumpadSubstract',
-];
+]);
 
 export function mightProducePrintableCharacter(evt: KeyboardEvent): boolean {
   if (evt.ctrlKey || evt.metaKey) {
@@ -221,5 +235,5 @@ export function mightProducePrintableCharacter(evt: KeyboardEvent): boolean {
   // When issued via a composition, the `code` field is empty
   if (evt.code === '') return true;
 
-  return PRINTABLE_KEYCODE.indexOf(evt.code) >= 0;
+  return PRINTABLE_KEYCODE.has(evt.code);
 }

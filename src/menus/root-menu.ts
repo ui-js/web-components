@@ -9,14 +9,14 @@ import { Menu, MenuItemTemplate } from './menu-core';
 import { MenuInterface, RootMenuInterface } from './menu-base';
 
 export class RootMenu extends Menu implements RootMenuInterface {
-  lastMoveEvent: PointerEvent;
+  lastMoveEvent?: PointerEvent;
 
-  private typingBufferResetTimer: number;
+  private typingBufferResetTimer = 0;
   private typingBuffer: string;
-  private _scrim: Scrim;
-  private _openTimestamp: number;
-  private currentKeyboardModifiers: KeyboardModifiers;
-  private hysteresisTimer: number;
+  private readonly _scrim: Scrim;
+  private _openTimestamp?: number;
+  private currentKeyboardModifiers?: KeyboardModifiers;
+  private hysteresisTimer = 0;
   /**
    * - 'closed': the menu is not visible
    * - 'open': the menu is visible as long as the mouse button is pressed
@@ -39,23 +39,27 @@ export class RootMenu extends Menu implements RootMenuInterface {
    *
    */
   constructor(
-    menuItems?: MenuItemTemplate[],
+    menuItems: MenuItemTemplate[],
     options?: {
       host?: Element;
-      assignedElement?: HTMLElement;
+      assignedElement?: HTMLElement | null;
       keyboardModifiers?: KeyboardModifiers;
     }
   ) {
     super(menuItems, {
       host: options?.host,
-      assignedContainer: options?.assignedElement,
+      assignedContainer: options?.assignedElement ?? null,
     });
     this.isDynamic = menuItems.some(isDynamic);
     this.currentKeyboardModifiers = options?.keyboardModifiers;
     this.typingBuffer = '';
     this.state = 'closed';
 
-    this._scrim = new Scrim({ onClose: () => this.hide() });
+    this._scrim = new Scrim({
+      onClose: () => {
+        this.hide();
+      },
+    });
   }
 
   /**
@@ -65,8 +69,9 @@ export class RootMenu extends Menu implements RootMenuInterface {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     let result: MenuInterface = this;
     while (result.isSubmenuOpen) {
-      result = result.activeMenuItem.submenu;
+      result = result.activeMenuItem!.submenu!;
     }
+
     return result;
   }
 
@@ -116,6 +121,7 @@ export class RootMenu extends Menu implements RootMenuInterface {
         } else if (!menuItem) {
           menu.activeMenuItem = menu.firstMenuItem;
         }
+
         break;
       case 'ArrowLeft':
         if (menu === this.rootMenu) {
@@ -124,10 +130,14 @@ export class RootMenu extends Menu implements RootMenuInterface {
           }
         } else {
           menu.hide();
-          const el = menu.parentMenu.activeMenuItem.element;
-          el.focus();
-          el.classList.remove('is-submenu-open');
+          const activeMenu = menu.parentMenu!.activeMenuItem;
+          if (activeMenu) {
+            const { element } = activeMenu;
+            element?.focus();
+            element?.classList.remove('is-submenu-open');
+          }
         }
+
         break;
       case 'ArrowDown':
         menu.activeMenuItem = menu.nextMenuItem(+1);
@@ -159,12 +169,14 @@ export class RootMenu extends Menu implements RootMenuInterface {
             }, 500);
           }
         }
+
         break;
       default:
         if (mightProducePrintableCharacter(ev)) {
           if (isFinite(this.typingBufferResetTimer)) {
             clearTimeout(this.typingBufferResetTimer);
           }
+
           this.typingBuffer += ev.key;
           const newItem = menu.findMenuItem(this.typingBuffer);
           if (newItem) menu.activeMenuItem = newItem;
@@ -176,6 +188,7 @@ export class RootMenu extends Menu implements RootMenuInterface {
           handled = false;
         }
     }
+
     if (handled) {
       ev.preventDefault();
       ev.stopPropagation();
@@ -191,8 +204,8 @@ export class RootMenu extends Menu implements RootMenuInterface {
       this.lastMoveEvent = event as PointerEvent;
     } else if (event.type === 'pointerup' && event.target === this.scrim) {
       if (
-        isFinite(this.rootMenu._openTimestamp) &&
-        Date.now() - this.rootMenu._openTimestamp < 120
+        Number.isFinite(this.rootMenu._openTimestamp!) &&
+        Date.now() - this.rootMenu._openTimestamp! < 120
       ) {
         // Hold mode...
         this.state = 'modal';
@@ -205,10 +218,12 @@ export class RootMenu extends Menu implements RootMenuInterface {
       event.stopPropagation();
       return;
     }
+
     super.handleEvent(event);
   }
 
   dispatchEvent(ev: Event): boolean {
+    if (!this.menuHost) return false;
     return this.menuHost.dispatchEvent(ev);
   }
 
@@ -216,8 +231,8 @@ export class RootMenu extends Menu implements RootMenuInterface {
     return this._scrim.element;
   }
 
-  private connectScrim(root: Node): void {
-    const scrim = this.scrim;
+  private connectScrim(root?: Node | null): void {
+    const { scrim } = this;
     scrim.addEventListener('pointerup', this);
 
     scrim.addEventListener('contextmenu', this);
@@ -230,7 +245,7 @@ export class RootMenu extends Menu implements RootMenuInterface {
   }
 
   private disconnectScrim(): void {
-    const scrim = this.scrim;
+    const { scrim } = this;
     scrim.removeEventListener('pointerup', this);
 
     scrim.removeEventListener('contextmenu', this);
@@ -249,7 +264,7 @@ export class RootMenu extends Menu implements RootMenuInterface {
   show(options?: {
     location?: [x: number, y: number];
     alternateLocation?: [x: number, y: number];
-    parent?: Node; // Where the menu should attach
+    parent?: Node | null; // Where the menu should attach
     keyboardModifiers?: KeyboardModifiers;
   }): boolean {
     // Connect the scrim now, so that the menu can be measured and placed
@@ -259,6 +274,7 @@ export class RootMenu extends Menu implements RootMenuInterface {
       this.disconnectScrim();
       return false;
     }
+
     // Record the opening time.
     // If we receive a mouseup within a small delta of the open time stamp
     // hold the menu open until it is dismissed, otherwise close it.
@@ -285,8 +301,9 @@ export class RootMenu extends Menu implements RootMenuInterface {
       fn();
       return;
     }
+
     this.hysteresisTimer = setTimeout(() => {
-      this.hysteresisTimer = undefined;
+      this.hysteresisTimer = 0;
       fn();
     }, delay);
   }
@@ -294,7 +311,7 @@ export class RootMenu extends Menu implements RootMenuInterface {
   cancelDelayedOperation(): void {
     if (this.hysteresisTimer) {
       clearTimeout(this.hysteresisTimer);
-      this.hysteresisTimer = undefined;
+      this.hysteresisTimer = 0;
     }
   }
 
@@ -320,5 +337,6 @@ function isDynamic(item: MenuItemTemplate): boolean {
   if (item.type === 'submenu' && item.submenu) {
     return result || item.submenu.some(isDynamic);
   }
+
   return result;
 }
