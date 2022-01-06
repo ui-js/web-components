@@ -90,7 +90,7 @@ export abstract class UIElement extends HTMLElement implements Updatable {
     tag: string;
     className: string;
     constructor: CustomElementConstructor;
-  }): Promise<void> {
+  }): Promise<void | CustomElementConstructor> {
     UIElement.registry[options.tag] = options.constructor;
 
     if (!window.customElements?.get(options.tag)) {
@@ -277,7 +277,7 @@ export abstract class UIElement extends HTMLElement implements Updatable {
 
     try {
       this._json = JSON.parse(json);
-    } catch (error) {
+    } catch (error: any) {
       // @todo: do this if __DEV__ only
       // There was an error parsing the JSON.
       // Display a helpful message.

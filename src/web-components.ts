@@ -17,10 +17,8 @@ export { UIContextMenu, UIPopupMenu, UISubmenu } from './menus/menus';
  */
 export async function ready(): Promise<unknown> {
   if (window?.customElements) {
-    return Promise.all<void>(
-      Object.keys(UIElement.registry).map((x) =>
-        window.customElements.whenDefined(x)
-      )
+    return Promise.all(
+      Object.keys(UIElement.registry).map(window.customElements.whenDefined)
     );
   }
 
